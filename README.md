@@ -20,7 +20,7 @@ any manual interaction by the organizers.
 The script has some non-core dependencies which can be installed on e.g. Debian
 using a command like the following:
 
-```perl
+```shell
 sudo apt install \
     libdatetime-format-iso8601-perl \
     libipc-system-simple-perl \
