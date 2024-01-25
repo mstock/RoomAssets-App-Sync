@@ -32,6 +32,13 @@ sudo apt install \
     libwww-perl
 ```
 
+If synchronization to [Nextcloud][nextcloud] is needed, it also requires the
+`nextcloudcmd` command line tool:
+
+```shell
+sudo apt install nextcloud-desktop-cmd
+```
+
 ## Usage
 
 A command like the following will download all the assets for the given rooms
