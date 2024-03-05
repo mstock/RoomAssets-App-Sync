@@ -134,7 +134,7 @@ sub sync_event ($self, $event) {
 	} @{ $submissions->{results} };
 	TALK: for my $talk (@{ $schedule->{talks} }) {
 		my $room = $rooms{$talk->{room}};
-		unless (defined $room) {
+		unless (defined $room && defined $talk->{code}) {
 			next TALK;
 		}
 		my $start = DateTime::Format::ISO8601->parse_datetime($talk->{start});
