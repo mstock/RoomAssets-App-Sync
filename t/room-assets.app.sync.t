@@ -1,10 +1,13 @@
 use strict;
 use warnings;
 
-use Test::More tests => 4;
+use utf8;
+use Test::More tests => 8;
 use File::Temp;
 use Path::Class::Dir;
 use Test::File;
+use Test::Exception;
+use Encode;
 
 my $tmp_dir = File::Temp->newdir();
 my $scratch = Path::Class::Dir->new($tmp_dir);
@@ -101,4 +104,139 @@ subtest 'sync_event' => sub {
 	$app->sync_event('our-conference');
 	dir_exists_ok($target_dir->subdir('Auditorium_B'), 'Auditorium B directory created');
 	dir_exists_ok($target_dir->subdir('Auditorium_B', '2022-08-19', '2022-08-19_1030_-_The_title_of_the_other_talk'), 'Talk directory created');
+
+	$target_dir->rmtree();
+};
+
+
+subtest 'sync_event with non-English language' => sub {
+	plan tests => 5;
+
+	my $target_dir = $scratch->subdir('sync_event');
+	$target_dir->mkpath();
+	my $app = RoomAssets::App::Sync->new({
+		events      => ['our-other-conference'],
+		rooms       => [encode('UTF-8', 'Hörsaal A')],
+		language    => 'de-formal',
+		target_dir  => $target_dir,
+		pretalx_url => 'file:t/testdata',
+	});
+
+	$app->sync_event('our-other-conference');
+	dir_exists_ok($target_dir->subdir('Hörsaal_A'), 'Hörsaal A directory created');
+	dir_exists_ok($target_dir->subdir('Hörsaal_A', '2022-08-19', '2022-08-19_1000_-_Der_Vortragstitel'), 'Talk directory created');
+	file_exists_ok(
+		$target_dir->subdir('Hörsaal_A', '2022-08-19', '2022-08-19_1000_-_Der_Vortragstitel', 'hallo.txt'),
+		'Talk resource created'
+	);
+
+	$app = RoomAssets::App::Sync->new({
+		events      => ['our-other-conference'],
+		rooms       => [encode('UTF-8', 'Hörsaal A'), encode('UTF-8', 'Hörsaal B')],
+		language    => 'de-formal',
+		target_dir  => $target_dir,
+		pretalx_url => 'file:t/testdata',
+	});
+
+	$app->sync_event('our-other-conference');
+	dir_exists_ok($target_dir->subdir('Hörsaal_B'), 'Auditorium B directory created');
+	dir_exists_ok($target_dir->subdir('Hörsaal_B', '2022-08-19', '2022-08-19_1030_-_Der_Titel_des_anderen_Vortrages'), 'Talk directory created');
+
+	$target_dir->rmtree()
+};
+
+
+subtest 'room_name' => sub {
+	plan tests => 3;
+
+	my $target_dir = $scratch->subdir('sync_event');
+	$target_dir->mkpath();
+	my $app = RoomAssets::App::Sync->new({
+		events      => ['our-other-conference'],
+		target_dir  => $target_dir,
+		pretalx_url => 'file:t/testdata',
+	});
+
+	my $name = $app->room_name({
+		name => {
+			en => 'Room 1',
+		},
+	});
+	is($name, 'Room 1', 'room name extracted');
+
+	throws_ok(sub {
+		$app->room_name({
+			name => {
+				en          => 'Room 1',
+				'de-formal' => 'Raum 1',
+			},
+		});
+	}, qr{More than one room name}, '--language parameter required');
+
+	$app = RoomAssets::App::Sync->new({
+		events      => ['our-other-conference'],
+		language    => 'de-formal',
+		target_dir  => $target_dir,
+		pretalx_url => 'file:t/testdata',
+	});
+	$name = $app->room_name({
+		name => {
+			en          => 'Room 1',
+			'de-formal' => 'Raum 1',
+		},
+	});
+	is($name, 'Raum 1', 'room name extracted');
+
+	$target_dir->rmtree()
+};
+
+
+subtest 'sync_event with all defined rooms' => sub {
+	plan tests => 5;
+
+	my $target_dir = $scratch->subdir('sync_event');
+	$target_dir->mkpath();
+	my $app = RoomAssets::App::Sync->new({
+		events      => ['our-other-conference'],
+		language    => 'de-formal',
+		target_dir  => $target_dir,
+		pretalx_url => 'file:t/testdata',
+	});
+
+	$app->sync_event('our-other-conference');
+	dir_exists_ok($target_dir->subdir('Hörsaal_A'), 'Hörsaal A directory created');
+	dir_exists_ok($target_dir->subdir('Hörsaal_A', '2022-08-19', '2022-08-19_1000_-_Der_Vortragstitel'), 'Talk directory created');
+	file_exists_ok(
+		$target_dir->subdir('Hörsaal_A', '2022-08-19', '2022-08-19_1000_-_Der_Vortragstitel', 'hallo.txt'),
+		'Talk resource created'
+	);
+	dir_exists_ok($target_dir->subdir('Hörsaal_B'), 'Auditorium B directory created');
+	dir_exists_ok($target_dir->subdir('Hörsaal_B', '2022-08-19', '2022-08-19_1030_-_Der_Titel_des_anderen_Vortrages'), 'Talk directory created');
+
+	$target_dir->rmtree()
+};
+
+
+subtest 'run with multiple events' => sub {
+	plan tests => 8;
+
+	my $target_dir = $scratch->subdir('sync_event');
+	$target_dir->mkpath();
+	my $app = RoomAssets::App::Sync->new({
+		events      => ['our-conference', 'our-other-conference'],
+		target_dir  => $target_dir,
+		pretalx_url => 'file:t/testdata',
+	});
+	$app->run();
+
+	dir_exists_ok($target_dir->subdir('Auditorium_A'), 'Auditorium A directory created');
+	dir_exists_ok($target_dir->subdir('Auditorium_A', '2022-08-19', '2022-08-19_1000_-_The_talk_title'), 'Talk directory created');
+	dir_exists_ok($target_dir->subdir('Auditorium_B'), 'Auditorium B directory created');
+	dir_exists_ok($target_dir->subdir('Auditorium_B', '2022-08-19', '2022-08-19_1030_-_The_title_of_the_other_talk'), 'Talk directory created');
+	dir_exists_ok($target_dir->subdir('Hörsaal_A'), 'Hörsaal A directory created');
+	dir_exists_ok($target_dir->subdir('Hörsaal_A', '2022-08-19', '2022-08-19_1000_-_Der_Vortragstitel'), 'Talk directory created');
+	dir_exists_ok($target_dir->subdir('Hörsaal_B'), 'Auditorium B directory created');
+	dir_exists_ok($target_dir->subdir('Hörsaal_B', '2022-08-19', '2022-08-19_1030_-_Der_Titel_des_anderen_Vortrages'), 'Talk directory created');
+
+	$target_dir->rmtree()
 };

@@ -1,0 +1,21 @@
+{
+  "count": 2,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "code": "39DAS6",
+      "resources": [
+        {
+          "resource": "resources/hallo.txt"
+        }
+      ],
+      "title": "Der Vortragstitel"
+    },
+    {
+      "code": "JFDS31",
+      "resources": [],
+      "title": "Der Titel des anderen Vortrages"
+    }
+  ]
+}

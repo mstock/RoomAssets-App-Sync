@@ -22,6 +22,7 @@ use List::Util qw(any);
 use Encode;
 use File::Temp;
 use IPC::System::Simple qw(systemx);
+use Data::Dumper;
 
 
 has 'pretalx_url' => (
@@ -47,8 +48,17 @@ has 'rooms' => (
 	cmd_flag      => 'room',
 	is            => 'ro',
 	isa           => 'ArrayRef[Str]',
-	required      => 1,
-	documentation => 'Names of rooms to sync.',
+	documentation => 'Names of selected rooms to sync. If not given, all rooms '
+		. 'will be synced.',
+);
+
+
+has 'language' => (
+	traits        => ['Getopt'],
+	is            => 'ro',
+	isa           => 'Str',
+	documentation => 'Conference language the room names are in. Required if '
+		. 'more than one event language is configured in Pretalx.',
 );
 
 
@@ -123,12 +133,18 @@ sub sync_event ($self, $event) {
 	my $submissions = $self->fetch_submissions($event);
 	my $schedule    = $self->fetch_schedule($event);
 
+	my @selected_rooms = defined $self->rooms()
+		? grep {
+			my $room_name = $self->room_name($_);
+			any { $room_name eq $_ } map { decode('UTF-8', $_) } @{ $self->rooms() }
+		} @{$schedule->{rooms}}
+		: @{$schedule->{rooms}};
 	my %rooms = map {
-		($_->{id} => $_->{name}->{en})
-	} grep {
-		my $room_name = $_->{name}->{en};
-		any { $room_name eq $_ } @{ $self->rooms() }
-	}  @{$schedule->{rooms}};
+		($_->{id} => $self->room_name($_))
+	} @selected_rooms;
+	unless (scalar keys %rooms) {
+		croak 'No (matching) rooms found';
+	}
 	my %submissions = map {
 		($_->{code} => $_)
 	} @{ $submissions->{results} };
@@ -152,6 +168,34 @@ sub sync_event ($self, $event) {
 		my @assets = map { $_->{resource} } @{ $submission->{resources} };
 		$self->update_or_create_resources($assets_target, @assets);
 	}
+}
+
+
+sub room_name ($self, $room) {
+	my %room_names = %{ $room->{name} };
+	my $room_name;
+	if (defined $self->language()) {
+		$room_name = $room_names{$self->language()};
+		unless (defined $room_name) {
+			croak 'No room name in language "' . $self->language() . '" for room '
+				. $self->dump($room) . ' found';
+		}
+	}
+	elsif (scalar keys %room_names == 1) {
+		($room_name) = values %room_names;
+	}
+	else {
+		croak 'More than one room name for room ' . $self->dump($room)
+			. ' found, must pass --language parameter';
+	}
+
+	return $room_name;
+}
+
+
+sub dump ($self, $structure) {
+	return Data::Dumper->new( [ $structure] )->Indent(0)->Sortkeys(1)
+		->Quotekeys(0)->Terse(1)->Useqq(1)->Dump()
 }
 
 

@@ -41,15 +41,20 @@ sudo apt install nextcloud-desktop-cmd
 
 ## Usage
 
-A command like the following will download all the assets for the given rooms
-for the given event and organizes them in the aforementioned structure:
+A command like the following will download all the assets for all or only the
+given rooms for the given event and organizes them in the aforementioned
+structure:
 
 ```shell
 ./bin/room-assets-sync --pretalx-url https://pretalx.com --event <event identifier> \
-    --target-dir <target directory> --room '<room name>' [--room '<another room name>']
+    --target-dir <target directory> {--room '<room name>' [--room '<another room name>']}
 ```
 
 For options related to [Nextcloud][nextcloud], see the output from `--help`.
+
+If there is more than one language configured for the conference in Pretalx, an
+additional `--language` parameter is required, like `en` for 'English', `de`
+for 'German' or `de-formal` for 'German (formal)'.
 
 Note that the script is currently basically 'silent' as long as there's no
 error. If it seems like it's not doing anything, a potentially common mistake
