@@ -226,7 +226,8 @@ sub sanitize_file_name ($self, $name) {
 	$name =~ s{^.{1,2}$}{_};
 	# Get rid of characters the nextcloudcmd client considers invalid and that
 	# might cause issues on Windows, too
-	$name =~ s{(?:/|\s|:|,|\?|\*|'|"|\||<|>|\\)+}{_}g;
+	$name =~ s{(?:/|\s|:|,|\?|\*|'|"|\||<|>|\(|\)|\\)+}{_}g;
+        $name =~ s{_+$}{};
 	return encode('UTF-8', $name);
 }
 
