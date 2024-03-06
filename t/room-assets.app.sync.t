@@ -16,7 +16,7 @@ use_ok('RoomAssets::App::Sync');
 
 
 subtest 'sanitize_file_name' => sub {
-	plan tests => 20;
+	plan tests => 31;
 
 	my $target_dir = $scratch->subdir('sanitize_file_name');
 	$target_dir->mkpath();
@@ -44,10 +44,22 @@ subtest 'sanitize_file_name' => sub {
 		'<'                     => '_',
 		'>'                     => '_',
 		'\\'                    => '_',
+		'('                     => '_',
+		')'                     => '_',
+		'_'                     => '_',
+		# Further cleanups
+		'__'                    => '_',
+		'___'                   => '_',
+		't_'                    => 't',
+		't____'                 => 't',
+		'_t____'                => 't',
+		'_t_t_'                 => 't_t',
+		'__t__t__'              => 't_t',
 		# Combinations
 		'../../foo bar/baz.txt' => '.._.._foo_bar_baz.txt',
 		'My talk: My Subject'   => 'My_talk_My_Subject',
 		'My talk, my subject'   => 'My_talk_my_subject',
+		'_My__talk (subject)_'  => 'My_talk_subject',
 	);
 	for my $input (keys %test_cases) {
 		is($app->sanitize_file_name($input), $test_cases{$input}, 'sanitized as expected');
