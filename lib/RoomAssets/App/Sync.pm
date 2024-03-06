@@ -223,10 +223,15 @@ sub update_or_create_resources ($self, $target_dir, @assets) {
 
 sub sanitize_file_name ($self, $name) {
 	# Prevent . and .. as filenames
-	$name =~ s{^.{1,2}$}{_};
+	$name =~ s{^\.{1,2}$}{_};
 	# Get rid of characters the nextcloudcmd client considers invalid and that
-	# might cause issues on Windows, too
-	$name =~ s{(?:/|\s|:|,|\?|\*|'|"|\||<|>|\\)+}{_}g;
+	# might cause issues on Windows, too, or which are generally not so 'nice'
+	# in file names
+	$name =~ s{(?:/|\s|:|,|\?|\*|'|"|\||<|>|\(|\)|\\)+}{_}g;
+	# Further cleanup to get slightly nicer names after the above replacements
+	$name =~ s{_+}{_}g;       # Collapse multiple consecutive _
+	$name =~ s{(?<=.)_+$}{};  # Remove trailing _, avoid empty result
+	$name =~ s{^_+(?=.)}{};   # Remove leading _, avoid empty result
 	return encode('UTF-8', $name);
 }
 
