@@ -12,4 +12,4 @@ use lib "$FindBin::Bin/../lib";
 
 use RoomAssets::App::Sync;
 
-RoomAssets::App::Sync->new_with_options()->run();
+exit RoomAssets::App::Sync->new_with_options()->run();

@@ -156,6 +156,8 @@ sub run ($self) {
 	if (defined $self->nextcloud_folder_url()) {
 		$self->sync_nextcloud();
 	}
+
+	return 0;
 }
 
 
