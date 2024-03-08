@@ -62,6 +62,36 @@ has 'language' => (
 );
 
 
+has 'locale' => (
+	is            => 'ro',
+	isa           => 'Str',
+	documentation => 'Locale to use when formatting and localizing dates. '
+		. 'Defaults to en-US.'
+);
+
+
+has 'day_strftime_pattern' => (
+	is            => 'ro',
+	isa           => 'Str',
+	lazy          => 1,
+	default       => '%Y-%m-%d_%A',
+	documentation => 'Strftime pattern to use when creating the name for the '
+		. 'day directory.'
+);
+
+
+has 'session_strftime_pattern' => (
+	is            => 'ro',
+	isa           => 'Str',
+	lazy          => 1,
+	default       => sub ($self) {
+		return $self->day_strftime_pattern() . '_%H%M';
+	},
+	documentation => 'Strftime pattern to use in prefix when creating the name '
+		. 'for the session directory.'
+);
+
+
 has 'target_dir' => (
 	is            => 'ro',
 	isa           => 'Path::Class::Dir',
@@ -154,10 +184,15 @@ sub sync_event ($self, $event) {
 			next TALK;
 		}
 		my $start = DateTime::Format::ISO8601->parse_datetime($talk->{start});
+		if (defined $self->locale()) {
+			$start->set_locale($self->locale());
+		}
 		my $assets_target = $self->target_dir()
 			->subdir($self->sanitize_file_name($room))
-			->subdir($start->strftime('%Y-%m-%d'))
-			->subdir($start->strftime('%Y-%m-%d_%H%M') . '_-_' . $self->sanitize_file_name($talk->{title}));
+			->subdir($start->strftime($self->day_strftime_pattern()))
+			->subdir($start->strftime($self->session_strftime_pattern())
+				. '_-_' . $self->sanitize_file_name($talk->{title})
+			);
 		$assets_target->mkpath();
 
 		my $submission = $submissions{$talk->{code}};
