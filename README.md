@@ -26,6 +26,7 @@ sudo apt install \
     libipc-system-simple-perl \
     libjson-perl \
     libmoose-perl \
+    libmoosex-app-cmd-perl \
     libmoosex-getopt-perl \
     libmoosex-types-path-class-perl \
     liburi-perl \
@@ -46,7 +47,7 @@ given rooms for the given event and organizes them in the aforementioned
 structure:
 
 ```shell
-./bin/room-assets-sync --pretalx-url https://pretalx.com --event <event identifier> \
+./bin/room-assets sync --pretalx-url https://pretalx.com --event <event identifier> \
     --target-dir <target directory> {--room '<room name>' [--room '<another room name>']}
 ```
 

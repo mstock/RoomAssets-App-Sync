@@ -1,4 +1,4 @@
-package RoomAssets::App::Sync;
+package RoomAssets::App::Command::sync;
 
 # ABSTRACT: Synchronize room assets from Pretalx to Nextcloud
 
@@ -9,6 +9,7 @@ use warnings;
 use Carp;
 use Moose;
 use MooseX::Types::Path::Class;
+extends qw(MooseX::App::Cmd::Command);
 with 'MooseX::Getopt::Dashes';
 
 no warnings qw(experimental::signatures);
@@ -140,7 +141,7 @@ has '_ua' => (
 );
 
 
-sub run ($self) {
+sub execute ($self, $opt, $args) {
 	unless (-d $self->target_dir()) {
 		croak 'Target dirctory ' . $self->target_dir() . ' does not exist';
 	}

@@ -8,11 +8,14 @@ use Path::Class::Dir;
 use Test::File;
 use Test::Exception;
 use Encode;
+use Test::MockObject;
 
 my $tmp_dir = File::Temp->newdir();
 my $scratch = Path::Class::Dir->new($tmp_dir);
+my $app_mock = Test::MockObject->new();
+$app_mock->set_isa('MooseX::App::Cmd');
 
-use_ok('RoomAssets::App::Sync');
+use_ok('RoomAssets::App::Command::sync');
 
 
 subtest 'sanitize_file_name' => sub {
@@ -20,7 +23,8 @@ subtest 'sanitize_file_name' => sub {
 
 	my $target_dir = $scratch->subdir('sanitize_file_name');
 	$target_dir->mkpath();
-	my $app = RoomAssets::App::Sync->new({
+	my $command = RoomAssets::App::Command::sync->new({
+		app        => $app_mock,
 		events     => ['our-conference'],
 		rooms      => ['Auditorium A'],
 		target_dir => $target_dir,
@@ -62,7 +66,7 @@ subtest 'sanitize_file_name' => sub {
 		'_My__talk (subject)_'  => 'My_talk_subject',
 	);
 	for my $input (keys %test_cases) {
-		is($app->sanitize_file_name($input), $test_cases{$input}, 'sanitized as expected');
+		is($command->sanitize_file_name($input), $test_cases{$input}, 'sanitized as expected');
 	}
 };
 
@@ -72,14 +76,15 @@ subtest 'update_or_create_resources' => sub {
 
 	my $target_dir = $scratch->subdir('update_or_create_resources');
 	$target_dir->mkpath();
-	my $app = RoomAssets::App::Sync->new({
+	my $command = RoomAssets::App::Command::sync->new({
+		app         => $app_mock,
 		events      => ['our-conference'],
 		rooms       => ['Auditorium A'],
 		target_dir  => $target_dir,
 		pretalx_url => 'file:t/testdata',
 	});
 
-	$app->update_or_create_resources($target_dir, (
+	$command->update_or_create_resources($target_dir, (
 		'resources/hello.txt',
 	));
 	file_exists_ok($target_dir->file('hello.txt'), 'file downloaded');
@@ -91,14 +96,15 @@ subtest 'sync_event' => sub {
 
 	my $target_dir = $scratch->subdir('sync_event');
 	$target_dir->mkpath();
-	my $app = RoomAssets::App::Sync->new({
+	my $command = RoomAssets::App::Command::sync->new({
+		app         => $app_mock,
 		events      => ['our-conference'],
 		rooms       => ['Auditorium A'],
 		target_dir  => $target_dir,
 		pretalx_url => 'file:t/testdata',
 	});
 
-	$app->sync_event('our-conference');
+	$command->sync_event('our-conference');
 	dir_exists_ok($target_dir->subdir(
 		'Auditorium_A'
 	), 'Auditorium A directory created');
@@ -114,14 +120,15 @@ subtest 'sync_event' => sub {
 					'hello.txt'
 	), 'Talk resource created');
 
-	$app = RoomAssets::App::Sync->new({
+	$command = RoomAssets::App::Command::sync->new({
+		app         => $app_mock,
 		events      => ['our-conference'],
 		rooms       => ['Auditorium A', 'Auditorium B'],
 		target_dir  => $target_dir,
 		pretalx_url => 'file:t/testdata',
 	});
 
-	$app->sync_event('our-conference');
+	$command->sync_event('our-conference');
 	dir_exists_ok($target_dir->subdir(
 		'Auditorium_B'
 	), 'Auditorium B directory created');
@@ -140,7 +147,8 @@ subtest 'sync_event with non-English language' => sub {
 
 	my $target_dir = $scratch->subdir('sync_event');
 	$target_dir->mkpath();
-	my $app = RoomAssets::App::Sync->new({
+	my $command = RoomAssets::App::Command::sync->new({
+		app         => $app_mock,
 		events      => ['our-other-conference'],
 		rooms       => [encode('UTF-8', 'Hörsaal A')],
 		language    => 'de-formal',
@@ -148,7 +156,7 @@ subtest 'sync_event with non-English language' => sub {
 		pretalx_url => 'file:t/testdata',
 	});
 
-	$app->sync_event('our-other-conference');
+	$command->sync_event('our-other-conference');
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_A'
 	), 'Hörsaal A directory created');
@@ -164,7 +172,8 @@ subtest 'sync_event with non-English language' => sub {
 					'hallo.txt'
 	), 'Talk resource created');
 
-	$app = RoomAssets::App::Sync->new({
+	$command = RoomAssets::App::Command::sync->new({
+		app         => $app_mock,
 		events      => ['our-other-conference'],
 		rooms       => [encode('UTF-8', 'Hörsaal A'), encode('UTF-8', 'Hörsaal B')],
 		language    => 'de-formal',
@@ -173,7 +182,7 @@ subtest 'sync_event with non-English language' => sub {
 		locale      => 'de-DE',
 	});
 
-	$app->sync_event('our-other-conference');
+	$command->sync_event('our-other-conference');
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_B'
 	), 'Auditorium B directory created');
@@ -192,13 +201,14 @@ subtest 'room_name' => sub {
 
 	my $target_dir = $scratch->subdir('sync_event');
 	$target_dir->mkpath();
-	my $app = RoomAssets::App::Sync->new({
+	my $command = RoomAssets::App::Command::sync->new({
+		app         => $app_mock,
 		events      => ['our-other-conference'],
 		target_dir  => $target_dir,
 		pretalx_url => 'file:t/testdata',
 	});
 
-	my $name = $app->room_name({
+	my $name = $command->room_name({
 		name => {
 			en => 'Room 1',
 		},
@@ -206,7 +216,7 @@ subtest 'room_name' => sub {
 	is($name, 'Room 1', 'room name extracted');
 
 	throws_ok(sub {
-		$app->room_name({
+		$command->room_name({
 			name => {
 				en          => 'Room 1',
 				'de-formal' => 'Raum 1',
@@ -214,13 +224,14 @@ subtest 'room_name' => sub {
 		});
 	}, qr{More than one room name}, '--language parameter required');
 
-	$app = RoomAssets::App::Sync->new({
+	$command = RoomAssets::App::Command::sync->new({
+		app         => $app_mock,
 		events      => ['our-other-conference'],
 		language    => 'de-formal',
 		target_dir  => $target_dir,
 		pretalx_url => 'file:t/testdata',
 	});
-	$name = $app->room_name({
+	$name = $command->room_name({
 		name => {
 			en          => 'Room 1',
 			'de-formal' => 'Raum 1',
@@ -237,14 +248,15 @@ subtest 'sync_event with all defined rooms' => sub {
 
 	my $target_dir = $scratch->subdir('sync_event');
 	$target_dir->mkpath();
-	my $app = RoomAssets::App::Sync->new({
+	my $command = RoomAssets::App::Command::sync->new({
+		app         => $app_mock,
 		events      => ['our-other-conference'],
 		language    => 'de-formal',
 		target_dir  => $target_dir,
 		pretalx_url => 'file:t/testdata',
 	});
 
-	$app->sync_event('our-other-conference');
+	$command->sync_event('our-other-conference');
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_A'
 	), 'Hörsaal A directory created');
@@ -277,12 +289,13 @@ subtest 'run with multiple events' => sub {
 
 	my $target_dir = $scratch->subdir('sync_event');
 	$target_dir->mkpath();
-	my $app = RoomAssets::App::Sync->new({
+	my $command = RoomAssets::App::Command::sync->new({
+		app         => $app_mock,
 		events      => ['our-conference', 'our-other-conference'],
 		target_dir  => $target_dir,
 		pretalx_url => 'file:t/testdata',
 	});
-	$app->run();
+	$command->execute(undef, undef);
 
 	dir_exists_ok($target_dir->subdir(
 		'Auditorium_A'
