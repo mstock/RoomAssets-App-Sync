@@ -105,12 +105,12 @@ subtest 'sync_event' => sub {
 	dir_exists_ok($target_dir->subdir(
 		'Auditorium_A',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1000_-_The_talk_title'
+				'2022-08-19_Friday_1000_-_The_talk_title_-_39DAS5-42001'
 	), 'Talk directory created');
 	file_exists_ok($target_dir->subdir(
 		'Auditorium_A',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1000_-_The_talk_title',
+				'2022-08-19_Friday_1000_-_The_talk_title_-_39DAS5-42001',
 					'hello.txt'
 	), 'Talk resource created');
 
@@ -128,7 +128,7 @@ subtest 'sync_event' => sub {
 	dir_exists_ok($target_dir->subdir(
 		'Auditorium_B',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1030_-_The_title_of_the_other_talk'
+				'2022-08-19_Friday_1030_-_The_title_of_the_other_talk_-_JFDS30-42002'
 	), 'Talk directory created');
 
 	$target_dir->rmtree();
@@ -155,12 +155,12 @@ subtest 'sync_event with non-English language' => sub {
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_A',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1000_-_Der_Vortragstitel'
+				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6-42003'
 	), 'Talk directory created');
 	file_exists_ok($target_dir->subdir(
 		'Hörsaal_A',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1000_-_Der_Vortragstitel',
+				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6-42003',
 					'hallo.txt'
 	), 'Talk resource created');
 
@@ -180,7 +180,7 @@ subtest 'sync_event with non-English language' => sub {
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_B',
 			'2022-08-19_Freitag',
-				'2022-08-19_Freitag_1030_-_Der_Titel_des_anderen_Vortrages'
+				'2022-08-19_Freitag_1030_-_Der_Titel_des_anderen_Vortrages_-_JFDS31-42004'
 	), 'Talk directory created');
 
 	$target_dir->rmtree()
@@ -251,12 +251,12 @@ subtest 'sync_event with all defined rooms' => sub {
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_A',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1000_-_Der_Vortragstitel'
+				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6-42003'
 	), 'Talk directory created');
 	file_exists_ok($target_dir->subdir(
 		'Hörsaal_A',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1000_-_Der_Vortragstitel',
+				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6-42003',
 					'hallo.txt'
 	), 'Talk resource created');
 	dir_exists_ok($target_dir->subdir(
@@ -265,7 +265,7 @@ subtest 'sync_event with all defined rooms' => sub {
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_B',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1030_-_Der_Titel_des_anderen_Vortrages'
+				'2022-08-19_Friday_1030_-_Der_Titel_des_anderen_Vortrages_-_JFDS31-42004'
 	), 'Talk directory created');
 
 	$target_dir->rmtree()
@@ -290,7 +290,7 @@ subtest 'run with multiple events' => sub {
 	dir_exists_ok($target_dir->subdir(
 		'Auditorium_A',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1000_-_The_talk_title'
+				'2022-08-19_Friday_1000_-_The_talk_title_-_39DAS5-42001'
 	), 'Talk directory created');
 	dir_exists_ok($target_dir->subdir(
 		'Auditorium_B'
@@ -298,7 +298,7 @@ subtest 'run with multiple events' => sub {
 	dir_exists_ok($target_dir->subdir(
 		'Auditorium_B',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1030_-_The_title_of_the_other_talk'
+				'2022-08-19_Friday_1030_-_The_title_of_the_other_talk_-_JFDS30-42002'
 	), 'Talk directory created');
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_A'
@@ -306,7 +306,7 @@ subtest 'run with multiple events' => sub {
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_A',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1000_-_Der_Vortragstitel'
+				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6-42003'
 	), 'Talk directory created');
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_B'
@@ -314,7 +314,7 @@ subtest 'run with multiple events' => sub {
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_B',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1030_-_Der_Titel_des_anderen_Vortrages'
+				'2022-08-19_Friday_1030_-_Der_Titel_des_anderen_Vortrages_-_JFDS31-42004'
 	), 'Talk directory created');
 
 	$target_dir->rmtree()

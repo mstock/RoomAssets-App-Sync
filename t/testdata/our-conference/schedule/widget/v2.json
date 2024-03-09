@@ -2,6 +2,7 @@
   "talks": [
     {
       "code": "39DAS5",
+      "id": 42001,
       "title": "The talk title",
       "start": "2022-08-19T10:00:00+02:00",
       "end": "2022-08-19T10:20:00+02:00",
@@ -9,6 +10,7 @@
     },
     {
       "code": "JFDS30",
+      "id": 42002,
       "title": "The title of the other talk",
       "start": "2022-08-19T10:30:00+02:00",
       "end": "2022-08-19T10:50:00+02:00",

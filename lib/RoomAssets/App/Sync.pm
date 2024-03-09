@@ -194,6 +194,8 @@ sub sync_event ($self, $event) {
 			->subdir($start->strftime($self->day_strftime_pattern()))
 			->subdir($start->strftime($self->session_strftime_pattern())
 				. '_-_' . $self->sanitize_file_name($talk->{title})
+				. '_-_' . $self->sanitize_file_name($talk->{code})
+				. '-' . $self->sanitize_file_name($talk->{id})
 			);
 		$assets_target->mkpath();
 
