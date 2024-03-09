@@ -316,18 +316,20 @@ subtest 'sync_event with all defined rooms' => sub {
 
 
 subtest 'run with multiple events' => sub {
-	plan tests => 8;
+	plan tests => 9;
 
 	my $target_dir = $scratch->subdir('sync_event');
 	$target_dir->mkpath();
 	my $command = RoomAssets::App::Command::sync->new({
-		app         => $app_mock,
-		events      => ['our-conference', 'our-other-conference'],
-		target_dir  => $target_dir,
-		pretalx_url => 'file:t/testdata',
+		app               => $app_mock,
+		events            => ['our-conference', 'our-other-conference'],
+		target_dir        => $target_dir,
+		pretalx_url       => 'file:t/testdata',
+		detailed_exitcode => 1,
 	});
-	$command->execute(undef, undef);
+	my $exit_code = $command->execute(undef, undef);
 
+	is($exit_code, 6, 'exit code as expected');
 	dir_exists_ok($target_dir->subdir(
 		'Auditorium_A'
 	), 'Auditorium A directory created');

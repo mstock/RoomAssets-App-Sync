@@ -111,6 +111,20 @@ has 'print_statistics' => (
 );
 
 
+has 'detailed_exitcode' => (
+	is            => 'ro',
+	isa           => 'Bool',
+	default       => 0,
+	documentation => 'Flag to indicate if the exit code should contain a '
+		. 'summary of the sync statistics. If set, the exit code contains a '
+		. 'bitmask with bit 0 indicating success (0) or failure (1), bit 1 '
+		. 'indicating if there was a new talk found (1) or not (0), bit 2 if a '
+		. 'new resource was downloaded (1) or not (0), bit 3 if an existing '
+		. 'resource was updated (1) or not (0) and bit 4 if an existing talk '
+		. 'was moved around (1) or not (0).',
+);
+
+
 has 'nextcloud_user' => (
 	is            => 'ro',
 	isa           => 'Str',
@@ -174,7 +188,24 @@ sub execute ($self, $opt, $args) {
 		$self->sync_nextcloud();
 	}
 
-	return 0;
+	if ($self->detailed_exitcode()) {
+		my %flags = (
+			new_talks_count         => 2,
+			new_resources_count     => 4,
+			updated_resources_count => 8,
+			moved_talks_count       => 16,
+		);
+		my $status = 0;
+		for my $key (keys %flags) {
+			if ($aggregated_statuses->{$key} > 0) {
+				$status |= $flags{$key};
+			}
+		}
+		return $status;
+	}
+	else {
+		return 0;
+	}
 }
 
 
