@@ -163,7 +163,11 @@ sub execute ($self, $opt, $args) {
 
 
 sub sync_event ($self, $event) {
-	my $submissions = $self->fetch_submissions($event);
+	my $submissions = {
+		map {
+			($_->{code} => $_)
+		} @{ $self->fetch_submissions($event)->{results} }
+	};
 	my $schedule = $self->fetch_schedule($event);
 	my $existing_sessions = $self->find_existing_sessions();
 
@@ -179,48 +183,51 @@ sub sync_event ($self, $event) {
 	unless (scalar keys %rooms) {
 		croak 'No (matching) rooms found';
 	}
-	my %submissions = map {
-		($_->{code} => $_)
-	} @{ $submissions->{results} };
+
 	TALK: for my $talk (@{ $schedule->{talks} }) {
 		my $room = $rooms{$talk->{room}};
 		unless (defined $room && defined $talk->{code}) {
 			next TALK;
 		}
-		my $start = DateTime::Format::ISO8601->parse_datetime($talk->{start});
-		if (defined $self->locale()) {
-			$start->set_locale($self->locale());
-		}
-		my $identifier = $self->sanitize_file_name($talk->{code})
-			. '-' . $self->sanitize_file_name($talk->{id});
-		my $assets_target = $self->target_dir()
-			->subdir($self->sanitize_file_name($room))
-			->subdir(encode('UTF-8', $start->strftime($self->day_strftime_pattern())))
-			->subdir(encode('UTF-8', $start->strftime($self->session_strftime_pattern()))
-				. '_-_' . $self->sanitize_file_name($talk->{title})
-				. '_-_' . encode('UTF-8', $identifier)
-			);
-		if (! -d $assets_target) {
-			if (defined $existing_sessions->{$identifier}) {
-				$assets_target->parent()->mkpath();
-				rename $existing_sessions->{$identifier}->{directory}, $assets_target
-					or die 'Failed to rename '
-						. $existing_sessions->{$identifier}->{directory}
-						. ' to ' . $assets_target . ': ' . $!;
-			}
-			else {
-				$assets_target->mkpath();
-			}
-		}
-
-		my $submission = $submissions{$talk->{code}};
-		unless (defined $submission) {
-			croak 'No submission for ' . $talk->{code} . ' found'
-		}
-
-		my @assets = map { $_->{resource} } @{ $submission->{resources} };
-		$self->update_or_create_resources($assets_target, @assets);
+		$self->sync_talk($room, $submissions, $talk, $existing_sessions);
 	}
+}
+
+
+sub sync_talk ($self, $room, $submissions, $talk, $existing_sessions) {
+	my $start = DateTime::Format::ISO8601->parse_datetime($talk->{start});
+	if (defined $self->locale()) {
+		$start->set_locale($self->locale());
+	}
+	my $identifier = $self->sanitize_file_name($talk->{code})
+		. '-' . $self->sanitize_file_name($talk->{id});
+	my $assets_target = $self->target_dir()
+		->subdir($self->sanitize_file_name($room))
+		->subdir(encode('UTF-8', $start->strftime($self->day_strftime_pattern())))
+		->subdir(encode('UTF-8', $start->strftime($self->session_strftime_pattern()))
+			. '_-_' . $self->sanitize_file_name($talk->{title})
+			. '_-_' . encode('UTF-8', $identifier)
+		);
+	if (! -d $assets_target) {
+		if (defined $existing_sessions->{$identifier}) {
+			$assets_target->parent()->mkpath();
+			rename $existing_sessions->{$identifier}->{directory}, $assets_target
+				or die 'Failed to rename '
+					. $existing_sessions->{$identifier}->{directory}
+					. ' to ' . $assets_target . ': ' . $!;
+		}
+		else {
+			$assets_target->mkpath();
+		}
+	}
+
+	my $submission = $submissions->{$talk->{code}};
+	unless (defined $submission) {
+		croak 'No submission for ' . $talk->{code} . ' found'
+	}
+
+	my @assets = map { $_->{resource} } @{ $submission->{resources} };
+	$self->update_or_create_resources($assets_target, @assets);
 }
 
 
