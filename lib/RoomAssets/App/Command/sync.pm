@@ -164,7 +164,8 @@ sub execute ($self, $opt, $args) {
 
 sub sync_event ($self, $event) {
 	my $submissions = $self->fetch_submissions($event);
-	my $schedule    = $self->fetch_schedule($event);
+	my $schedule = $self->fetch_schedule($event);
+	my $existing_sessions = $self->find_existing_sessions();
 
 	my @selected_rooms = defined $self->rooms()
 		? grep {
@@ -190,15 +191,27 @@ sub sync_event ($self, $event) {
 		if (defined $self->locale()) {
 			$start->set_locale($self->locale());
 		}
+		my $identifier = $self->sanitize_file_name($talk->{code})
+			. '-' . $self->sanitize_file_name($talk->{id});
 		my $assets_target = $self->target_dir()
 			->subdir($self->sanitize_file_name($room))
-			->subdir($start->strftime($self->day_strftime_pattern()))
-			->subdir($start->strftime($self->session_strftime_pattern())
+			->subdir(encode('UTF-8', $start->strftime($self->day_strftime_pattern())))
+			->subdir(encode('UTF-8', $start->strftime($self->session_strftime_pattern()))
 				. '_-_' . $self->sanitize_file_name($talk->{title})
-				. '_-_' . $self->sanitize_file_name($talk->{code})
-				. '-' . $self->sanitize_file_name($talk->{id})
+				. '_-_' . encode('UTF-8', $identifier)
 			);
-		$assets_target->mkpath();
+		if (! -d $assets_target) {
+			if (defined $existing_sessions->{$identifier}) {
+				$assets_target->parent()->mkpath();
+				rename $existing_sessions->{$identifier}->{directory}, $assets_target
+					or die 'Failed to rename '
+						. $existing_sessions->{$identifier}->{directory}
+						. ' to ' . $assets_target . ': ' . $!;
+			}
+			else {
+				$assets_target->mkpath();
+			}
+		}
 
 		my $submission = $submissions{$talk->{code}};
 		unless (defined $submission) {
@@ -299,6 +312,30 @@ sub fetch_resource ($self, $url) {
 		croak 'Failed to retrieve submissions: ' . $result->status_line();
 	}
 	return decode_json($result->content());
+}
+
+
+sub find_existing_sessions ($self) {
+	my $sessions;
+	if (-d $self->target_dir()) {
+		for my $room ($self->target_dir()->children()) {
+			for my $day ($room->children()) {
+				SESSION: for my $session ($day->children()) {
+					my ($code, $id) = $session->basename() =~ m{([A-Z0-9]{6,6})-(\d+)$};
+					unless (defined $code && defined $id) {
+						next SESSION;
+					}
+					$sessions->{$code . '-' . $id} = {
+						code      => $code,
+						id        => $id,
+						directory => $session,
+					};
+				}
+			}
+		}
+	}
+
+	return $sessions;
 }
 
 

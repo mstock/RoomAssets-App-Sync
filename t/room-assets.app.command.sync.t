@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use utf8;
-use Test::More tests => 8;
+use Test::More tests => 9;
 use File::Temp;
 use Path::Class::Dir;
 use Test::File;
@@ -172,6 +172,7 @@ subtest 'sync_event with non-English language' => sub {
 					'hallo.txt'
 	), 'Talk resource created');
 
+	$target_dir->rmtree();
 	$command = RoomAssets::App::Command::sync->new({
 		app         => $app_mock,
 		events      => ['our-other-conference'],
@@ -192,7 +193,7 @@ subtest 'sync_event with non-English language' => sub {
 				'2022-08-19_Freitag_1030_-_Der_Titel_des_anderen_Vortrages_-_JFDS31-42004'
 	), 'Talk directory created');
 
-	$target_dir->rmtree()
+	$target_dir->rmtree();
 };
 
 
@@ -239,7 +240,7 @@ subtest 'room_name' => sub {
 	});
 	is($name, 'Raum 1', 'room name extracted');
 
-	$target_dir->rmtree()
+	$target_dir->rmtree();
 };
 
 
@@ -280,7 +281,7 @@ subtest 'sync_event with all defined rooms' => sub {
 				'2022-08-19_Friday_1030_-_Der_Titel_des_anderen_Vortrages_-_JFDS31-42004'
 	), 'Talk directory created');
 
-	$target_dir->rmtree()
+	$target_dir->rmtree();
 };
 
 
@@ -330,5 +331,67 @@ subtest 'run with multiple events' => sub {
 				'2022-08-19_Friday_1030_-_Der_Titel_des_anderen_Vortrages_-_JFDS31-42004'
 	), 'Talk directory created');
 
-	$target_dir->rmtree()
+	$target_dir->rmtree();
+};
+
+
+subtest 'move existing sessions on changes' => sub {
+	plan tests => 4;
+
+	my $target_dir = $scratch->subdir('sync_event');
+	$target_dir->mkpath();
+	my $command = RoomAssets::App::Command::sync->new({
+		app         => $app_mock,
+		events      => ['our-conference'],
+		target_dir  => $target_dir,
+		pretalx_url => 'file:t/testdata',
+	});
+
+	$command->sync_event('our-conference');
+	file_exists_ok($target_dir->subdir(
+		'Auditorium_A',
+			'2022-08-19_Friday',
+				'2022-08-19_Friday_1000_-_The_talk_title_-_39DAS5-42001',
+					'hello.txt'
+	), 'Talk resource created');
+
+	$command = RoomAssets::App::Command::sync->new({
+		app         => $app_mock,
+		events      => ['our-conference'],
+		target_dir  => $target_dir,
+		pretalx_url => 'file:t/testdata',
+		locale      => 'de-DE',  # Use different locale now
+	});
+
+	$command->sync_event('our-conference');
+	file_exists_ok($target_dir->subdir(
+		'Auditorium_A',
+			'2022-08-19_Freitag',
+				'2022-08-19_Freitag_1000_-_The_talk_title_-_39DAS5-42001',
+					'hello.txt'
+	), 'Talk directory and resource moved');
+
+	$command = RoomAssets::App::Command::sync->new({
+		app         => $app_mock,
+		events      => ['our-updated-conference'],  # Moved and changed some talks
+		target_dir  => $target_dir,
+		pretalx_url => 'file:t/testdata',
+		locale      => 'de-DE',
+	});
+
+	$command->sync_event('our-updated-conference');
+	file_exists_ok($target_dir->subdir(
+		'Auditorium_B',
+			'2022-08-19_Freitag',
+				'2022-08-19_Freitag_1100_-_The_new_talk_title_-_39DAS5-42001',
+					'hello.txt'
+	), 'Talk directory and resource moved');
+	dir_exists_ok($target_dir->subdir(
+		'Auditorium_A',
+			'2022-08-19_Freitag',
+				'2022-08-19_Freitag_1130_-_The_new_title_of_the_other_talk_-_JFDS30-42002'
+	), 'Talk directory moved');
+
+
+	$target_dir->rmtree();
 };

@@ -1,0 +1,42 @@
+{
+  "talks": [
+    {
+      "code": "39DAS5",
+      "id": 42001,
+      "title": "The new talk title",
+      "start": "2022-08-19T11:00:00+02:00",
+      "end": "2022-08-19T11:20:00+02:00",
+      "room": 23
+    },
+    {
+      "code": "JFDS30",
+      "id": 42002,
+      "title": "The new title of the other talk",
+      "start": "2022-08-19T11:30:00+02:00",
+      "end": "2022-08-19T11:50:00+02:00",
+      "room": 42
+    },
+    {
+      "title": {
+        "en": "Lunch break"
+      },
+      "start": "2022-08-19T13:00:00+02:00",
+      "end": "2022-08-19T14:30:00+02:00",
+      "room": 23
+    }
+  ],
+  "rooms": [
+    {
+      "id": 42,
+      "name": {
+        "en": "Auditorium A"
+      }
+    },
+    {
+      "id": 23,
+      "name": {
+        "en": "Auditorium B"
+      }
+    }
+  ]
+}

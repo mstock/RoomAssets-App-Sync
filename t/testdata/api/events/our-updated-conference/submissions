@@ -1,0 +1,21 @@
+{
+  "count": 2,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "code": "39DAS5",
+      "resources": [
+        {
+          "resource": "resources/hello.txt"
+        }
+      ],
+      "title": "The new talk title"
+    },
+    {
+      "code": "JFDS30",
+      "resources": [],
+      "title": "The title of the other talk"
+    }
+  ]
+}
