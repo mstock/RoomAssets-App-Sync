@@ -102,6 +102,15 @@ has 'target_dir' => (
 );
 
 
+has 'print_statistics' => (
+	is            => 'ro',
+	isa           => 'Bool',
+	default       => 0,
+	documentation => 'Flag to indicated if some statistics should be printed '
+		. 'after the sync run',
+);
+
+
 has 'nextcloud_user' => (
 	is            => 'ro',
 	isa           => 'Str',
@@ -150,8 +159,15 @@ sub execute ($self, $opt, $args) {
 		$self->sync_nextcloud();
 	}
 
+	my $aggregated_statuses = {};
 	for my $event (@{$self->events()}) {
-		$self->sync_event($event);
+		$aggregated_statuses = $self->aggregate_statuses(
+			$aggregated_statuses, $self->sync_event($event)
+		);
+	}
+	if ($self->print_statistics()) {
+		say {*STDERR} 'Sync statistics:';
+		print JSON->new()->utf8()->pretty->canonical()->encode($aggregated_statuses);
 	}
 
 	if (defined $self->nextcloud_folder_url()) {
@@ -184,17 +200,29 @@ sub sync_event ($self, $event) {
 		croak 'No (matching) rooms found';
 	}
 
+	my $aggregated_statuses= {};
 	TALK: for my $talk (@{ $schedule->{talks} }) {
 		my $room = $rooms{$talk->{room}};
 		unless (defined $room && defined $talk->{code}) {
 			next TALK;
 		}
-		$self->sync_talk($room, $submissions, $talk, $existing_sessions);
+		my $status = $self->sync_talk(
+			$room, $submissions, $talk, $existing_sessions
+		);
+		$aggregated_statuses = $self->aggregate_statuses(
+			$aggregated_statuses, $status
+		);
 	}
+
+	return $aggregated_statuses;
 }
 
 
 sub sync_talk ($self, $room, $submissions, $talk, $existing_sessions) {
+	my $status = {
+		new_talks_count   => 0,
+		moved_talks_count => 0,
+	};
 	my $start = DateTime::Format::ISO8601->parse_datetime($talk->{start});
 	if (defined $self->locale()) {
 		$start->set_locale($self->locale());
@@ -215,9 +243,11 @@ sub sync_talk ($self, $room, $submissions, $talk, $existing_sessions) {
 				or die 'Failed to rename '
 					. $existing_sessions->{$identifier}->{directory}
 					. ' to ' . $assets_target . ': ' . $!;
+			$status->{moved_talks_count}++;
 		}
 		else {
 			$assets_target->mkpath();
+			$status->{new_talks_count}++;
 		}
 	}
 
@@ -227,7 +257,10 @@ sub sync_talk ($self, $room, $submissions, $talk, $existing_sessions) {
 	}
 
 	my @assets = map { $_->{resource} } @{ $submission->{resources} };
-	$self->update_or_create_resources($assets_target, @assets);
+	return {
+		%{ $status },
+		%{ $self->update_or_create_resources($assets_target, @assets) },
+	};
 }
 
 
@@ -260,10 +293,15 @@ sub dump ($self, $structure) {
 
 
 sub update_or_create_resources ($self, $target_dir, @assets) {
+	my $status = {
+		new_resources_count     => 0,
+		updated_resources_count => 0,
+	};
 	for my $asset (@assets) {
 		my ($filename) = reverse split(/\//, $asset);
 		$filename = $self->sanitize_file_name($filename);
 		my $target_file = $target_dir->file($filename);
+		my $is_new = -f $target_file ? 0 : 1;
 
 		my $asset_uri = index($asset, 'http') == 0
 			? URI->new($asset)
@@ -277,7 +315,12 @@ sub update_or_create_resources ($self, $target_dir, @assets) {
 		unless ($result->is_success() || $result->code() eq 304) {
 			confess 'Failed to download asset ' . $asset . ': ' . $result->status_line();
 		}
+		if ($result->is_success()) {
+			$status->{$is_new ? 'new_resources_count' : 'updated_resources_count'}++;
+		}
 	}
+
+	return $status;
 }
 
 
@@ -355,6 +398,20 @@ sub sync_nextcloud ($self) {
 		$self->nextcloud_folder_url(),
 	);
 	systemx(@cmd);
+}
+
+
+sub aggregate_statuses ($self, $aggregate, $new) {
+	my $aggregated_statuses = { %{ $aggregate } };
+	for my $key (keys %{ $new }) {
+		if ($key =~ m{_count$}) {
+			# Sum up counts
+			$aggregated_statuses->{$key} //= 0;
+			$aggregated_statuses->{$key} += $new->{$key};
+		}
+	}
+
+	return $aggregated_statuses;
 }
 
 

@@ -92,7 +92,7 @@ subtest 'update_or_create_resources' => sub {
 
 
 subtest 'sync_event' => sub {
-	plan tests => 5;
+	plan tests => 7;
 
 	my $target_dir = $scratch->subdir('sync_event');
 	$target_dir->mkpath();
@@ -104,7 +104,7 @@ subtest 'sync_event' => sub {
 		pretalx_url => 'file:t/testdata',
 	});
 
-	$command->sync_event('our-conference');
+	my $status = $command->sync_event('our-conference');
 	dir_exists_ok($target_dir->subdir(
 		'Auditorium_A'
 	), 'Auditorium A directory created');
@@ -119,6 +119,12 @@ subtest 'sync_event' => sub {
 				'2022-08-19_Friday_1000_-_The_talk_title_-_39DAS5-42001',
 					'hello.txt'
 	), 'Talk resource created');
+	is_deeply($status, {
+		moved_talks_count       => 0,
+		new_resources_count     => 1,
+		new_talks_count         => 1,
+		updated_resources_count => 0,
+	}, 'statistics correct');
 
 	$command = RoomAssets::App::Command::sync->new({
 		app         => $app_mock,
@@ -128,7 +134,7 @@ subtest 'sync_event' => sub {
 		pretalx_url => 'file:t/testdata',
 	});
 
-	$command->sync_event('our-conference');
+	$status = $command->sync_event('our-conference');
 	dir_exists_ok($target_dir->subdir(
 		'Auditorium_B'
 	), 'Auditorium B directory created');
@@ -137,13 +143,19 @@ subtest 'sync_event' => sub {
 			'2022-08-19_Friday',
 				'2022-08-19_Friday_1030_-_The_title_of_the_other_talk_-_JFDS30-42002'
 	), 'Talk directory created');
+	is_deeply($status, {
+		moved_talks_count       => 0,
+		new_resources_count     => 0,
+		new_talks_count         => 1,
+		updated_resources_count => 0,
+	}, 'statistics correct');
 
 	$target_dir->rmtree();
 };
 
 
 subtest 'sync_event with non-English language' => sub {
-	plan tests => 5;
+	plan tests => 7;
 
 	my $target_dir = $scratch->subdir('sync_event');
 	$target_dir->mkpath();
@@ -156,7 +168,7 @@ subtest 'sync_event with non-English language' => sub {
 		pretalx_url => 'file:t/testdata',
 	});
 
-	$command->sync_event('our-other-conference');
+	my $status = $command->sync_event('our-other-conference');
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_A'
 	), 'Hörsaal A directory created');
@@ -171,6 +183,12 @@ subtest 'sync_event with non-English language' => sub {
 				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6-42003',
 					'hallo.txt'
 	), 'Talk resource created');
+	is_deeply($status, {
+		moved_talks_count       => 0,
+		new_resources_count     => 1,
+		new_talks_count         => 1,
+		updated_resources_count => 0,
+	}, 'statistics correct');
 
 	$target_dir->rmtree();
 	$command = RoomAssets::App::Command::sync->new({
@@ -183,7 +201,7 @@ subtest 'sync_event with non-English language' => sub {
 		locale      => 'de-DE',
 	});
 
-	$command->sync_event('our-other-conference');
+	$status = $command->sync_event('our-other-conference');
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_B'
 	), 'Auditorium B directory created');
@@ -192,6 +210,12 @@ subtest 'sync_event with non-English language' => sub {
 			'2022-08-19_Freitag',
 				'2022-08-19_Freitag_1030_-_Der_Titel_des_anderen_Vortrages_-_JFDS31-42004'
 	), 'Talk directory created');
+	is_deeply($status, {
+		moved_talks_count       => 0,
+		new_resources_count     => 1,
+		new_talks_count         => 2,
+		updated_resources_count => 0,
+	}, 'statistics correct');
 
 	$target_dir->rmtree();
 };
@@ -245,7 +269,7 @@ subtest 'room_name' => sub {
 
 
 subtest 'sync_event with all defined rooms' => sub {
-	plan tests => 5;
+	plan tests => 6;
 
 	my $target_dir = $scratch->subdir('sync_event');
 	$target_dir->mkpath();
@@ -257,7 +281,7 @@ subtest 'sync_event with all defined rooms' => sub {
 		pretalx_url => 'file:t/testdata',
 	});
 
-	$command->sync_event('our-other-conference');
+	my $status = $command->sync_event('our-other-conference');
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_A'
 	), 'Hörsaal A directory created');
@@ -280,6 +304,12 @@ subtest 'sync_event with all defined rooms' => sub {
 			'2022-08-19_Friday',
 				'2022-08-19_Friday_1030_-_Der_Titel_des_anderen_Vortrages_-_JFDS31-42004'
 	), 'Talk directory created');
+	is_deeply($status, {
+		moved_talks_count       => 0,
+		new_resources_count     => 1,
+		new_talks_count         => 2,
+		updated_resources_count => 0,
+	}, 'statistics correct');
 
 	$target_dir->rmtree();
 };
@@ -336,7 +366,7 @@ subtest 'run with multiple events' => sub {
 
 
 subtest 'move existing sessions on changes' => sub {
-	plan tests => 4;
+	plan tests => 7;
 
 	my $target_dir = $scratch->subdir('sync_event');
 	$target_dir->mkpath();
@@ -347,13 +377,19 @@ subtest 'move existing sessions on changes' => sub {
 		pretalx_url => 'file:t/testdata',
 	});
 
-	$command->sync_event('our-conference');
+	my $status = $command->sync_event('our-conference');
 	file_exists_ok($target_dir->subdir(
 		'Auditorium_A',
 			'2022-08-19_Friday',
 				'2022-08-19_Friday_1000_-_The_talk_title_-_39DAS5-42001',
 					'hello.txt'
 	), 'Talk resource created');
+	is_deeply($status, {
+		moved_talks_count       => 0,
+		new_resources_count     => 1,
+		new_talks_count         => 2,
+		updated_resources_count => 0,
+	}, 'statistics correct');
 
 	$command = RoomAssets::App::Command::sync->new({
 		app         => $app_mock,
@@ -363,13 +399,20 @@ subtest 'move existing sessions on changes' => sub {
 		locale      => 'de-DE',  # Use different locale now
 	});
 
-	$command->sync_event('our-conference');
-	file_exists_ok($target_dir->subdir(
+	$status = $command->sync_event('our-conference');
+	my $hello_txt = $target_dir->subdir(
 		'Auditorium_A',
 			'2022-08-19_Freitag',
 				'2022-08-19_Freitag_1000_-_The_talk_title_-_39DAS5-42001',
 					'hello.txt'
-	), 'Talk directory and resource moved');
+	);
+	file_exists_ok($hello_txt, 'Talk directory and resource moved');
+	is_deeply($status, {
+		moved_talks_count       => 2,
+		new_resources_count     => 0,
+		new_talks_count         => 0,
+		updated_resources_count => 0,
+	}, 'statistics correct');
 
 	$command = RoomAssets::App::Command::sync->new({
 		app         => $app_mock,
@@ -378,8 +421,9 @@ subtest 'move existing sessions on changes' => sub {
 		pretalx_url => 'file:t/testdata',
 		locale      => 'de-DE',
 	});
+	utime 0, 0, $hello_txt;  # Force file update on next sync
 
-	$command->sync_event('our-updated-conference');
+	$status = $command->sync_event('our-updated-conference');
 	file_exists_ok($target_dir->subdir(
 		'Auditorium_B',
 			'2022-08-19_Freitag',
@@ -391,7 +435,12 @@ subtest 'move existing sessions on changes' => sub {
 			'2022-08-19_Freitag',
 				'2022-08-19_Freitag_1130_-_The_new_title_of_the_other_talk_-_JFDS30-42002'
 	), 'Talk directory moved');
-
+	is_deeply($status, {
+		moved_talks_count       => 2,
+		new_resources_count     => 0,
+		new_talks_count         => 0,
+		updated_resources_count => 1,
+	}, 'statistics correct');
 
 	$target_dir->rmtree();
 };
