@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use utf8;
-use Test::More tests => 9;
+use Test::More tests => 10;
 use File::Temp;
 use Path::Class::Dir;
 use Test::File;
@@ -445,4 +445,26 @@ subtest 'move existing sessions on changes' => sub {
 	}, 'statistics correct');
 
 	$target_dir->rmtree();
+};
+
+
+subtest 'cleanup of empty rooms and days' => sub {
+	plan tests => 2;
+
+	my $target_dir = $scratch->subdir('sync_event');
+	$target_dir->mkpath();
+	my $doomed_room = $target_dir->subdir('Doomed_Room');
+	$doomed_room->mkpath();
+	my $doomed_day = $doomed_room->subdir('Doomed_Day');
+	$doomed_day->mkpath();
+	my $command = RoomAssets::App::Command::sync->new({
+		app         => $app_mock,
+		events      => ['our-conference'],
+		target_dir  => $target_dir,
+		pretalx_url => 'file:t/testdata',
+	});
+
+	$command->cleanup();
+	file_not_exists_ok($doomed_room, 'Empty room removed');
+	file_not_exists_ok($doomed_day, 'Empty day removed');
 };

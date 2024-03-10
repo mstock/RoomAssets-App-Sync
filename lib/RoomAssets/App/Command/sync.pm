@@ -179,6 +179,8 @@ sub execute ($self, $opt, $args) {
 			$aggregated_statuses, $self->sync_event($event)
 		);
 	}
+	$self->cleanup();
+
 	if ($self->print_statistics()) {
 		say {*STDERR} 'Sync statistics:';
 		print JSON->new()->utf8()->pretty->canonical()->encode($aggregated_statuses);
@@ -417,6 +419,23 @@ sub find_existing_sessions ($self) {
 	}
 
 	return $sessions;
+}
+
+
+sub cleanup ($self) {
+	for my $room ($self->target_dir()->children()) {
+		for my $day ($room->children()) {
+			$self->remove_if_empty($day);
+		}
+		$self->remove_if_empty($room);
+	}
+}
+
+
+sub remove_if_empty ($self, $directory) {
+	unless ($directory->children()) {
+		rmdir $directory or die 'Failed to remove ' . $directory. ': ' . $!;
+	}
 }
 
 
