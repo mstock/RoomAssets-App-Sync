@@ -325,11 +325,10 @@ subtest 'run with multiple events' => sub {
 		events            => ['our-conference', 'our-other-conference'],
 		target_dir        => $target_dir,
 		pretalx_url       => 'file:t/testdata',
-		detailed_exitcode => 1,
 	});
-	my $exit_code = $command->execute(undef, undef);
+	my $exit_code = $command->perform_sync();
 
-	is($exit_code, 6, 'exit code as expected');
+	is($exit_code, 1, 'something has changed');
 	dir_exists_ok($target_dir->subdir(
 		'Auditorium_A'
 	), 'Auditorium A directory created');

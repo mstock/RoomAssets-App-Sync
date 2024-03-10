@@ -63,6 +63,14 @@ is having used the wrong room name, so make sure its the same name as used in
 [Pretalx][pretalx].
 
 
+### Exit codes
+
+The `sync` subcommand exits with status `0` if it was successfully executed but
+no change was detected, `1` if it was successfully executed but something has
+changed (use the `--print-statistics` parameter to get more detailed
+information in JSON format on `STDOUT`) and a value >= `2` on error.
+
+
 ## License
 
 This software is copyright (c) 2024 by Manfred Stock.
