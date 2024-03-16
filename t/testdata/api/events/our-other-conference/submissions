@@ -18,7 +18,12 @@
     {
       "code": "JFDS31",
       "resources": [],
-      "title": "Der Titel des anderen Vortrages"
+      "title": "Der Titel des anderen Vortrages",
+      "resources": [
+        {
+          "resource": "resources/missing-resource.txt"
+        }
+      ]
     }
   ]
 }

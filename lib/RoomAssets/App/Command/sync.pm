@@ -324,6 +324,7 @@ sub update_or_create_resources ($self, $target_dir, @assets) {
 	my $status = {
 		new_resources_count     => 0,
 		updated_resources_count => 0,
+		failed_resources_count  => 0,
 	};
 	for my $asset (@assets) {
 		my $asset_uri = index($asset, 'http') == 0
@@ -344,7 +345,8 @@ sub update_or_create_resources ($self, $target_dir, @assets) {
 
 		my $result = $self->_ua()->mirror($asset_uri, $target_file);
 		unless ($result->is_success() || $result->code() eq 304) {
-			confess 'Failed to download asset ' . $asset . ': ' . $result->status_line();
+			$log->errorf('Failed to download asset %s: %s', $asset, $result->status_line());
+			$status->{failed_resources_count}++;
 		}
 		if ($result->is_success()) {
 			$status->{$is_new ? 'new_resources_count' : 'updated_resources_count'}++;
