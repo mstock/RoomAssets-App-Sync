@@ -155,7 +155,7 @@ subtest 'sync_event' => sub {
 
 
 subtest 'sync_event with non-English language' => sub {
-	plan tests => 7;
+	plan tests => 8;
 
 	my $target_dir = $scratch->subdir('sync_event');
 	$target_dir->mkpath();
@@ -183,9 +183,15 @@ subtest 'sync_event with non-English language' => sub {
 				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6-42003',
 					'hallo.txt'
 	), 'Talk resource created');
+	file_exists_ok($target_dir->subdir(
+		'Hörsaal_A',
+			'2022-08-19_Friday',
+				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6-42003',
+					'Hallöchen_Welt!.txt'
+	), 'Talk resource created');
 	is_deeply($status, {
 		moved_talks_count       => 0,
-		new_resources_count     => 1,
+		new_resources_count     => 2,
 		new_talks_count         => 1,
 		updated_resources_count => 0,
 	}, 'statistics correct');
@@ -212,7 +218,7 @@ subtest 'sync_event with non-English language' => sub {
 	), 'Talk directory created');
 	is_deeply($status, {
 		moved_talks_count       => 0,
-		new_resources_count     => 1,
+		new_resources_count     => 2,
 		new_talks_count         => 2,
 		updated_resources_count => 0,
 	}, 'statistics correct');
@@ -269,7 +275,7 @@ subtest 'room_name' => sub {
 
 
 subtest 'sync_event with all defined rooms' => sub {
-	plan tests => 6;
+	plan tests => 7;
 
 	my $target_dir = $scratch->subdir('sync_event');
 	$target_dir->mkpath();
@@ -296,6 +302,12 @@ subtest 'sync_event with all defined rooms' => sub {
 				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6-42003',
 					'hallo.txt'
 	), 'Talk resource created');
+	file_exists_ok($target_dir->subdir(
+		'Hörsaal_A',
+			'2022-08-19_Friday',
+				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6-42003',
+					'Hallöchen_Welt!.txt'
+	), 'Talk resource created');
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_B'
 	), 'Auditorium B directory created');
@@ -306,7 +318,7 @@ subtest 'sync_event with all defined rooms' => sub {
 	), 'Talk directory created');
 	is_deeply($status, {
 		moved_talks_count       => 0,
-		new_resources_count     => 1,
+		new_resources_count     => 2,
 		new_talks_count         => 2,
 		updated_resources_count => 0,
 	}, 'statistics correct');

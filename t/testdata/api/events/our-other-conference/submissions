@@ -8,6 +8,9 @@
       "resources": [
         {
           "resource": "resources/hallo.txt"
+        },
+        {
+          "resource": "resources/Hall%C3%B6chen%2C%20Welt%21.txt"
         }
       ],
       "title": "Der Vortragstitel"

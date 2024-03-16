@@ -24,6 +24,7 @@ use Encode;
 use File::Temp;
 use IPC::System::Simple qw(systemx);
 use Data::Dumper;
+use File::Spec::Unix;
 
 
 has 'pretalx_url' => (
@@ -324,18 +325,21 @@ sub update_or_create_resources ($self, $target_dir, @assets) {
 		updated_resources_count => 0,
 	};
 	for my $asset (@assets) {
-		my ($filename) = reverse split(/\//, $asset);
-		$filename = $self->sanitize_file_name($filename);
-		my $target_file = $target_dir->file($filename);
-		my $is_new = -f $target_file ? 0 : 1;
-
 		my $asset_uri = index($asset, 'http') == 0
 			? URI->new($asset)
 			: do {
 				my $uri = URI->new($self->pretalx_url());
-				$uri->path_segments($uri->path_segments(), split(/\//, $asset));
+				$uri->path(
+					File::Spec::Unix->canonpath(
+						File::Spec::Unix->catfile($uri->path(), $asset)
+					)
+				);
 				$uri;
 			};
+		my $filename = decode('UTF-8', ($asset_uri->path_segments())[-1]);
+		$filename = $self->sanitize_file_name($filename);
+		my $target_file = $target_dir->file($filename);
+		my $is_new = -f $target_file ? 0 : 1;
 
 		my $result = $self->_ua()->mirror($asset_uri, $target_file);
 		unless ($result->is_success() || $result->code() eq 304) {
