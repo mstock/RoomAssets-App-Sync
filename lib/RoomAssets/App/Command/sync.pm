@@ -360,7 +360,7 @@ sub sanitize_file_name ($self, $name) {
 	# Get rid of characters the nextcloudcmd client considers invalid and that
 	# might cause issues on Windows, too, or which are generally not so 'nice'
 	# in file names
-	$name =~ s{(?:/|\s|:|,|\?|\*|'|"|\||<|>|\(|\)|\\)+}{_}g;
+	$name =~ s{(?:/|\s|:|,|\?|\*|'|"|\||<|>|\(|\)|\\|!|&)+}{_}g;
 	# Further cleanup to get slightly nicer names after the above replacements
 	$name =~ s{_+}{_}g;       # Collapse multiple consecutive _
 	$name =~ s{(?<=.)_+$}{};  # Remove trailing _, avoid empty result

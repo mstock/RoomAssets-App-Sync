@@ -19,7 +19,7 @@ use_ok('RoomAssets::App::Command::sync');
 
 
 subtest 'sanitize_file_name' => sub {
-	plan tests => 31;
+	plan tests => 33;
 
 	my $target_dir = $scratch->subdir('sanitize_file_name');
 	$target_dir->mkpath();
@@ -51,6 +51,8 @@ subtest 'sanitize_file_name' => sub {
 		'('                     => '_',
 		')'                     => '_',
 		'_'                     => '_',
+		'!'                     => '_',
+		'&'                     => '_',
 		# Further cleanups
 		'__'                    => '_',
 		'___'                   => '_',
@@ -187,7 +189,7 @@ subtest 'sync_event with non-English language' => sub {
 		'Hörsaal_A',
 			'2022-08-19_Friday',
 				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6-42003',
-					'Hallöchen_Welt!.txt'
+					'Hallöchen_Welt_.txt'
 	), 'Talk resource created');
 	is_deeply($status, {
 		moved_talks_count       => 0,
@@ -306,7 +308,7 @@ subtest 'sync_event with all defined rooms' => sub {
 		'Hörsaal_A',
 			'2022-08-19_Friday',
 				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6-42003',
-					'Hallöchen_Welt!.txt'
+					'Hallöchen_Welt_.txt'
 	), 'Talk resource created');
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_B'
