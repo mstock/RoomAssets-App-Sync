@@ -25,6 +25,7 @@ sudo apt install \
     libdatetime-format-iso8601-perl \
     libipc-system-simple-perl \
     libjson-perl \
+    liblog-any-perl \
     libmoose-perl \
     libmoosex-app-cmd-perl \
     libmoosex-getopt-perl \

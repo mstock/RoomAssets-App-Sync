@@ -14,6 +14,7 @@ my $tmp_dir = File::Temp->newdir();
 my $scratch = Path::Class::Dir->new($tmp_dir);
 my $app_mock = Test::MockObject->new();
 $app_mock->set_isa('MooseX::App::Cmd');
+my $log_level = 'critical';
 
 use_ok('RoomAssets::App::Command::sync');
 
@@ -25,6 +26,7 @@ subtest 'sanitize_file_name' => sub {
 	$target_dir->mkpath();
 	my $command = RoomAssets::App::Command::sync->new({
 		app        => $app_mock,
+		log_level  => $log_level,
 		events     => ['our-conference'],
 		rooms      => ['Auditorium A'],
 		target_dir => $target_dir,
@@ -80,6 +82,7 @@ subtest 'update_or_create_resources' => sub {
 	$target_dir->mkpath();
 	my $command = RoomAssets::App::Command::sync->new({
 		app         => $app_mock,
+		log_level   => $log_level,
 		events      => ['our-conference'],
 		rooms       => ['Auditorium A'],
 		target_dir  => $target_dir,
@@ -100,6 +103,7 @@ subtest 'sync_event' => sub {
 	$target_dir->mkpath();
 	my $command = RoomAssets::App::Command::sync->new({
 		app         => $app_mock,
+		log_level   => $log_level,
 		events      => ['our-conference'],
 		rooms       => ['Auditorium A'],
 		target_dir  => $target_dir,
@@ -130,6 +134,7 @@ subtest 'sync_event' => sub {
 
 	$command = RoomAssets::App::Command::sync->new({
 		app         => $app_mock,
+		log_level   => $log_level,
 		events      => ['our-conference'],
 		rooms       => ['Auditorium A', 'Auditorium B'],
 		target_dir  => $target_dir,
@@ -163,6 +168,7 @@ subtest 'sync_event with non-English language' => sub {
 	$target_dir->mkpath();
 	my $command = RoomAssets::App::Command::sync->new({
 		app         => $app_mock,
+		log_level   => $log_level,
 		events      => ['our-other-conference'],
 		rooms       => [encode('UTF-8', 'Hörsaal A')],
 		language    => 'de-formal',
@@ -201,6 +207,7 @@ subtest 'sync_event with non-English language' => sub {
 	$target_dir->rmtree();
 	$command = RoomAssets::App::Command::sync->new({
 		app         => $app_mock,
+		log_level   => $log_level,
 		events      => ['our-other-conference'],
 		rooms       => [encode('UTF-8', 'Hörsaal A'), encode('UTF-8', 'Hörsaal B')],
 		language    => 'de-formal',
@@ -236,6 +243,7 @@ subtest 'room_name' => sub {
 	$target_dir->mkpath();
 	my $command = RoomAssets::App::Command::sync->new({
 		app         => $app_mock,
+		log_level   => $log_level,
 		events      => ['our-other-conference'],
 		target_dir  => $target_dir,
 		pretalx_url => 'file:t/testdata',
@@ -259,6 +267,7 @@ subtest 'room_name' => sub {
 
 	$command = RoomAssets::App::Command::sync->new({
 		app         => $app_mock,
+		log_level   => $log_level,
 		events      => ['our-other-conference'],
 		language    => 'de-formal',
 		target_dir  => $target_dir,
@@ -283,6 +292,7 @@ subtest 'sync_event with all defined rooms' => sub {
 	$target_dir->mkpath();
 	my $command = RoomAssets::App::Command::sync->new({
 		app         => $app_mock,
+		log_level   => $log_level,
 		events      => ['our-other-conference'],
 		language    => 'de-formal',
 		target_dir  => $target_dir,
@@ -335,10 +345,11 @@ subtest 'run with multiple events' => sub {
 	my $target_dir = $scratch->subdir('sync_event');
 	$target_dir->mkpath();
 	my $command = RoomAssets::App::Command::sync->new({
-		app               => $app_mock,
-		events            => ['our-conference', 'our-other-conference'],
-		target_dir        => $target_dir,
-		pretalx_url       => 'file:t/testdata',
+		app         => $app_mock,
+		log_level   => $log_level,
+		events      => ['our-conference', 'our-other-conference'],
+		target_dir  => $target_dir,
+		pretalx_url => 'file:t/testdata',
 	});
 	my $exit_code = $command->perform_sync();
 
@@ -387,6 +398,7 @@ subtest 'move existing sessions on changes' => sub {
 	$target_dir->mkpath();
 	my $command = RoomAssets::App::Command::sync->new({
 		app         => $app_mock,
+		log_level   => $log_level,
 		events      => ['our-conference'],
 		target_dir  => $target_dir,
 		pretalx_url => 'file:t/testdata',
@@ -408,6 +420,7 @@ subtest 'move existing sessions on changes' => sub {
 
 	$command = RoomAssets::App::Command::sync->new({
 		app         => $app_mock,
+		log_level   => $log_level,
 		events      => ['our-conference'],
 		target_dir  => $target_dir,
 		pretalx_url => 'file:t/testdata',
@@ -431,6 +444,7 @@ subtest 'move existing sessions on changes' => sub {
 
 	$command = RoomAssets::App::Command::sync->new({
 		app         => $app_mock,
+		log_level   => $log_level,
 		events      => ['our-updated-conference'],  # Moved and changed some talks
 		target_dir  => $target_dir,
 		pretalx_url => 'file:t/testdata',
@@ -472,6 +486,7 @@ subtest 'cleanup of empty rooms and days' => sub {
 	$doomed_day->mkpath();
 	my $command = RoomAssets::App::Command::sync->new({
 		app         => $app_mock,
+		log_level   => $log_level,
 		events      => ['our-conference'],
 		target_dir  => $target_dir,
 		pretalx_url => 'file:t/testdata',

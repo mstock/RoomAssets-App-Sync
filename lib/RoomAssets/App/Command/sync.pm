@@ -9,8 +9,8 @@ use warnings;
 use Carp;
 use Moose;
 use MooseX::Types::Path::Class;
-extends qw(MooseX::App::Cmd::Command);
-with 'MooseX::Getopt::Dashes';
+
+extends qw(RoomAssets::App::Command);
 
 no warnings qw(experimental::signatures);
 use feature qw(signatures);
@@ -25,6 +25,7 @@ use File::Temp;
 use IPC::System::Simple qw(systemx);
 use Data::Dumper;
 use File::Spec::Unix;
+use Log::Any qw($log);
 
 
 has 'pretalx_url' => (
