@@ -89,9 +89,11 @@ subtest 'update_or_create_resources' => sub {
 		pretalx_url => 'file:t/testdata',
 	});
 
-	$command->update_or_create_resources($target_dir, (
-		'resources/hello.txt',
-	));
+	$command->update_or_create_resources($target_dir, {
+		resources => [{
+			resource => 'resources/hello.txt',
+		}],
+	});
 	file_exists_ok($target_dir->file('hello.txt'), 'file downloaded');
 };
 

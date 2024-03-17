@@ -284,10 +284,9 @@ sub sync_talk ($self, $room, $submissions, $talk, $existing_sessions) {
 		croak 'No submission for ' . $talk->{code} . ' found'
 	}
 
-	my @assets = map { $_->{resource} } @{ $submission->{resources} };
 	return {
 		%{ $status },
-		%{ $self->update_or_create_resources($assets_target, @assets) },
+		%{ $self->update_or_create_resources($assets_target, $submission) },
 	};
 }
 
@@ -320,13 +319,13 @@ sub dump ($self, $structure) {
 }
 
 
-sub update_or_create_resources ($self, $target_dir, @assets) {
+sub update_or_create_resources ($self, $target_dir, $submission) {
 	my $status = {
 		new_resources_count     => 0,
 		updated_resources_count => 0,
 		failed_resources_count  => 0,
 	};
-	for my $asset (@assets) {
+	for my $asset (map { $_->{resource} } @{ $submission->{resources} }) {
 		my $asset_uri = index($asset, 'http') == 0
 			? URI->new($asset)
 			: do {
@@ -345,7 +344,9 @@ sub update_or_create_resources ($self, $target_dir, @assets) {
 
 		my $result = $self->_ua()->mirror($asset_uri, $target_file);
 		unless ($result->is_success() || $result->code() eq 304) {
-			$log->errorf('Failed to download asset %s: %s', $asset, $result->status_line());
+			$log->errorf('Failed to download asset %s from submission "%s" '
+				. '(code: %s): %s', $asset, encode('UTF-8', $submission->{title}),
+				$submission->{code}, $result->status_line());
 			$status->{failed_resources_count}++;
 		}
 		if ($result->is_success()) {
