@@ -325,7 +325,7 @@ sub update_or_create_resources ($self, $target_dir, $submission) {
 		updated_resources_count => 0,
 		failed_resources_count  => 0,
 	};
-	for my $asset (map { $_->{resource} } @{ $submission->{resources} }) {
+	ASSET: for my $asset (map { $_->{resource} } @{ $submission->{resources} }) {
 		my $asset_uri = index($asset, 'http') == 0
 			? URI->new($asset)
 			: do {
@@ -338,6 +338,12 @@ sub update_or_create_resources ($self, $target_dir, $submission) {
 				$uri;
 			};
 		my $filename = decode('UTF-8', ($asset_uri->path_segments())[-1]);
+		if ($filename eq '') {
+			$log->errorf('Failed to extract usable file name from asset URL %s',
+				$asset_uri);
+			$status->{failed_resources_count}++;
+			next ASSET;
+		}
 		$filename = $self->sanitize_file_name($filename);
 		my $target_file = $target_dir->file($filename);
 		my $is_new = -f $target_file ? 0 : 1;

@@ -22,6 +22,9 @@
       "resources": [
         {
           "resource": "resources/missing-resource.txt"
+        },
+        {
+          "resource": "https://slides.example.com/unusable-file-name/"
         }
       ]
     }
