@@ -20,7 +20,7 @@ use_ok('RoomAssets::App::Command::sync');
 
 
 subtest 'sanitize_file_name' => sub {
-	plan tests => 33;
+	plan tests => 38;
 
 	my $target_dir = $scratch->subdir('sanitize_file_name');
 	$target_dir->mkpath();
@@ -63,6 +63,11 @@ subtest 'sanitize_file_name' => sub {
 		'_t____'                => 't',
 		'_t_t_'                 => 't_t',
 		'__t__t__'              => 't_t',
+		'-t'                    => 't',
+		'--t'                   => 't',
+		'-'                     => '_',
+		't-t'                   => 't-t',
+		'-..'                   => '_',
 		# Combinations
 		'../../foo bar/baz.txt' => '.._.._foo_bar_baz.txt',
 		'My talk: My Subject'   => 'My_talk_My_Subject',

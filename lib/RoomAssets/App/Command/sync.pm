@@ -365,16 +365,19 @@ sub update_or_create_resources ($self, $target_dir, $submission) {
 
 
 sub sanitize_file_name ($self, $name) {
-	# Prevent . and .. as filenames
-	$name =~ s{^\.{1,2}$}{_};
 	# Get rid of characters the nextcloudcmd client considers invalid and that
 	# might cause issues on Windows, too, or which are generally not so 'nice'
 	# in file names
 	$name =~ s{(?:/|\s|:|,|\?|\*|'|"|\||<|>|\(|\)|\\|!|&)+}{_}g;
 	# Further cleanup to get slightly nicer names after the above replacements
+	$name =~ s{^-+(?=.)}{};   # Remove leading -, avoid empty result
+	$name =~ s{^-$}{_};       # Replace - with _ if that's the full name
 	$name =~ s{_+}{_}g;       # Collapse multiple consecutive _
 	$name =~ s{(?<=.)_+$}{};  # Remove trailing _, avoid empty result
 	$name =~ s{^_+(?=.)}{};   # Remove leading _, avoid empty result
+	# Prevent . and .. as filenames
+	$name =~ s{^\.{1,2}$}{_};
+
 	return encode('UTF-8', $name);
 }
 
