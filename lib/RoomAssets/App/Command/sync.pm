@@ -255,8 +255,7 @@ sub sync_talk ($self, $room, $submissions, $talk, $existing_sessions) {
 	if (defined $self->locale()) {
 		$start->set_locale($self->locale());
 	}
-	my $identifier = $self->sanitize_file_name($talk->{code})
-		. '-' . $self->sanitize_file_name($talk->{id});
+	my $identifier = $self->sanitize_file_name($talk->{code});
 	my $assets_target = $self->target_dir()
 		->subdir($self->sanitize_file_name($room))
 		->subdir(encode('UTF-8', $start->strftime($self->day_strftime_pattern())))
@@ -265,17 +264,33 @@ sub sync_talk ($self, $room, $submissions, $talk, $existing_sessions) {
 			. '_-_' . encode('UTF-8', $identifier)
 		);
 	if (! -d $assets_target) {
-		if (defined $existing_sessions->{$identifier}) {
+		if (
+			defined $existing_sessions->{$identifier}
+				&& scalar @{ $existing_sessions->{$identifier}->{directories} } > 0
+		) {
 			$assets_target->parent()->mkpath();
-			rename $existing_sessions->{$identifier}->{directory}, $assets_target
-				or die 'Failed to rename '
-					. $existing_sessions->{$identifier}->{directory}
+			my $existing_directory = shift @{ $existing_sessions->{$identifier}
+				->{directories} };
+			rename $existing_directory, $assets_target
+				or die 'Failed to rename ' . $existing_directory
 					. ' to ' . $assets_target . ': ' . $!;
 			$status->{moved_talks_count}++;
 		}
 		else {
 			$assets_target->mkpath();
 			$status->{new_talks_count}++;
+		}
+	}
+	else {
+		if (
+			defined $existing_sessions->{$identifier}
+				&& scalar @{ $existing_sessions->{$identifier}->{directories} } > 0
+		) {
+			$existing_sessions->{$identifier}->{directories} = [
+				grep {
+					$_ ne $assets_target->absolute()->resolve()
+				} @{ $existing_sessions->{$identifier}->{directories} }
+			];
 		}
 	}
 
@@ -411,18 +426,19 @@ sub fetch_resource ($self, $url) {
 sub find_existing_sessions ($self) {
 	my $sessions;
 	if (-d $self->target_dir()) {
-		for my $room ($self->target_dir()->children()) {
-			for my $day ($room->children()) {
-				SESSION: for my $session ($day->children()) {
-					my ($code, $id) = $session->basename() =~ m{([A-Z0-9]{6,6})-(\d+)$};
-					unless (defined $code && defined $id) {
+		for my $room (sort $self->target_dir()->children()) {
+			for my $day (sort $room->children()) {
+				SESSION: for my $session (sort $day->children()) {
+					my ($code) = $session->basename() =~ m{([A-Z0-9]{6,6})$};
+					unless (defined $code) {
 						next SESSION;
 					}
-					$sessions->{$code . '-' . $id} = {
-						code      => $code,
-						id        => $id,
-						directory => $session,
+					$sessions->{$code} //= {
+						code        => $code,
+						directories => [],
 					};
+					push @{ $sessions->{$code}->{directories} },
+						$session->absolute()->resolve();
 				}
 			}
 		}

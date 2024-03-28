@@ -1,0 +1,17 @@
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "code": "39DAS5",
+      "resources": [
+        {
+          "resource": "resources/hello.txt"
+        }
+      ],
+      "title": "The talk title",
+      "slot_count": 2
+    }
+  ]
+}

@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use utf8;
-use Test::More tests => 10;
+use Test::More tests => 11;
 use File::Temp;
 use Path::Class::Dir;
 use Test::File;
@@ -124,12 +124,12 @@ subtest 'sync_event' => sub {
 	dir_exists_ok($target_dir->subdir(
 		'Auditorium_A',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1000_-_The_talk_title_-_39DAS5-42001'
+				'2022-08-19_Friday_1000_-_The_talk_title_-_39DAS5'
 	), 'Talk directory created');
 	file_exists_ok($target_dir->subdir(
 		'Auditorium_A',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1000_-_The_talk_title_-_39DAS5-42001',
+				'2022-08-19_Friday_1000_-_The_talk_title_-_39DAS5',
 					'hello.txt'
 	), 'Talk resource created');
 	is_deeply($status, {
@@ -156,12 +156,89 @@ subtest 'sync_event' => sub {
 	dir_exists_ok($target_dir->subdir(
 		'Auditorium_B',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1030_-_The_title_of_the_other_talk_-_JFDS30-42002'
+				'2022-08-19_Friday_1030_-_The_title_of_the_other_talk_-_JFDS30'
 	), 'Talk directory created');
 	is_deeply($status, {
 		failed_resources_count  => 0,
 		moved_talks_count       => 0,
 		new_resources_count     => 0,
+		new_talks_count         => 1,
+		updated_resources_count => 0,
+	}, 'statistics correct');
+
+	$target_dir->rmtree();
+};
+
+
+subtest 'sync_event with a talk having more than one slot' => sub {
+	plan tests => 11;
+
+	my $target_dir = $scratch->subdir('sync_event');
+	$target_dir->mkpath();
+	my $command = RoomAssets::App::Command::sync->new({
+		app         => $app_mock,
+		log_level   => $log_level,
+		events      => ['multislot'],
+		target_dir  => $target_dir,
+		pretalx_url => 'file:t/testdata',
+	});
+
+	my $status = $command->sync_event('multislot');
+	dir_exists_ok($target_dir->subdir(
+		'Auditorium_A'
+	), 'Auditorium A directory created');
+	dir_exists_ok($target_dir->subdir(
+		'Auditorium_B'
+	), 'Auditorium B directory created');
+	my $slot_1_dir = $target_dir->subdir(
+		'Auditorium_A',
+			'2022-08-19_Friday',
+				'2022-08-19_Friday_1000_-_The_talk_title_-_39DAS5'
+	);
+	dir_exists_ok($slot_1_dir, 'Talk slot 1 directory created');
+	file_exists_ok($target_dir->subdir(
+		'Auditorium_A',
+			'2022-08-19_Friday',
+				'2022-08-19_Friday_1000_-_The_talk_title_-_39DAS5',
+					'hello.txt'
+	), 'Talk slot 1 resource created');
+	my $slot_2_dir = $target_dir->subdir(
+		'Auditorium_B',
+			'2022-08-19_Friday',
+				'2022-08-19_Friday_1030_-_The_talk_title_-_39DAS5'
+	);
+	dir_exists_ok($slot_2_dir, 'Talk slot 2 directory created');
+	file_exists_ok($target_dir->subdir(
+		'Auditorium_B',
+			'2022-08-19_Friday',
+				'2022-08-19_Friday_1030_-_The_talk_title_-_39DAS5',
+					'hello.txt'
+	), 'Talk slot 2 resource created');
+	is_deeply($status, {
+		failed_resources_count  => 0,
+		moved_talks_count       => 0,
+		new_resources_count     => 2,
+		new_talks_count         => 2,
+		updated_resources_count => 0,
+	}, 'statistics correct');
+
+	$status = $command->sync_event('multislot');
+	is_deeply($status, {
+		failed_resources_count  => 0,
+		moved_talks_count       => 0,
+		new_resources_count     => 0,
+		new_talks_count         => 0,
+		updated_resources_count => 0,
+	}, 'statistics correct');
+
+	$slot_2_dir->rmtree();
+	$status = $command->sync_event('multislot');
+	dir_exists_ok($slot_1_dir, 'Talk slot 1 directory created');
+	dir_exists_ok($slot_2_dir, 'Talk slot 1 directory created');
+	is_deeply($status, {
+		failed_resources_count  => 0,
+		moved_talks_count       => 0,
+		new_resources_count     => 1,
 		new_talks_count         => 1,
 		updated_resources_count => 0,
 	}, 'statistics correct');
@@ -192,18 +269,18 @@ subtest 'sync_event with non-English language' => sub {
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_A',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6-42003'
+				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6'
 	), 'Talk directory created');
 	file_exists_ok($target_dir->subdir(
 		'Hörsaal_A',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6-42003',
+				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6',
 					'hallo.txt'
 	), 'Talk resource created');
 	file_exists_ok($target_dir->subdir(
 		'Hörsaal_A',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6-42003',
+				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6',
 					'Hallöchen_Welt_.txt'
 	), 'Talk resource created');
 	is_deeply($status, {
@@ -233,7 +310,7 @@ subtest 'sync_event with non-English language' => sub {
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_B',
 			'2022-08-19_Freitag',
-				'2022-08-19_Freitag_1030_-_Der_Titel_des_anderen_Vortrages_-_JFDS31-42004'
+				'2022-08-19_Freitag_1030_-_Der_Titel_des_anderen_Vortrages_-_JFDS31'
 	), 'Talk directory created');
 	is_deeply($status, {
 		failed_resources_count  => 2,
@@ -317,18 +394,18 @@ subtest 'sync_event with all defined rooms' => sub {
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_A',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6-42003'
+				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6'
 	), 'Talk directory created');
 	file_exists_ok($target_dir->subdir(
 		'Hörsaal_A',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6-42003',
+				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6',
 					'hallo.txt'
 	), 'Talk resource created');
 	file_exists_ok($target_dir->subdir(
 		'Hörsaal_A',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6-42003',
+				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6',
 					'Hallöchen_Welt_.txt'
 	), 'Talk resource created');
 	dir_exists_ok($target_dir->subdir(
@@ -337,7 +414,7 @@ subtest 'sync_event with all defined rooms' => sub {
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_B',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1030_-_Der_Titel_des_anderen_Vortrages_-_JFDS31-42004'
+				'2022-08-19_Friday_1030_-_Der_Titel_des_anderen_Vortrages_-_JFDS31'
 	), 'Talk directory created');
 	is_deeply($status, {
 		failed_resources_count  => 2,
@@ -372,7 +449,7 @@ subtest 'run with multiple events' => sub {
 	dir_exists_ok($target_dir->subdir(
 		'Auditorium_A',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1000_-_The_talk_title_-_39DAS5-42001'
+				'2022-08-19_Friday_1000_-_The_talk_title_-_39DAS5'
 	), 'Talk directory created');
 	dir_exists_ok($target_dir->subdir(
 		'Auditorium_B'
@@ -380,7 +457,7 @@ subtest 'run with multiple events' => sub {
 	dir_exists_ok($target_dir->subdir(
 		'Auditorium_B',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1030_-_The_title_of_the_other_talk_-_JFDS30-42002'
+				'2022-08-19_Friday_1030_-_The_title_of_the_other_talk_-_JFDS30'
 	), 'Talk directory created');
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_A'
@@ -388,7 +465,7 @@ subtest 'run with multiple events' => sub {
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_A',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6-42003'
+				'2022-08-19_Friday_1000_-_Der_Vortragstitel_-_39DAS6'
 	), 'Talk directory created');
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_B'
@@ -396,7 +473,7 @@ subtest 'run with multiple events' => sub {
 	dir_exists_ok($target_dir->subdir(
 		'Hörsaal_B',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1030_-_Der_Titel_des_anderen_Vortrages_-_JFDS31-42004'
+				'2022-08-19_Friday_1030_-_Der_Titel_des_anderen_Vortrages_-_JFDS31'
 	), 'Talk directory created');
 
 	$target_dir->rmtree();
@@ -420,7 +497,7 @@ subtest 'move existing sessions on changes' => sub {
 	file_exists_ok($target_dir->subdir(
 		'Auditorium_A',
 			'2022-08-19_Friday',
-				'2022-08-19_Friday_1000_-_The_talk_title_-_39DAS5-42001',
+				'2022-08-19_Friday_1000_-_The_talk_title_-_39DAS5',
 					'hello.txt'
 	), 'Talk resource created');
 	is_deeply($status, {
@@ -444,7 +521,7 @@ subtest 'move existing sessions on changes' => sub {
 	my $hello_txt = $target_dir->subdir(
 		'Auditorium_A',
 			'2022-08-19_Freitag',
-				'2022-08-19_Freitag_1000_-_The_talk_title_-_39DAS5-42001',
+				'2022-08-19_Freitag_1000_-_The_talk_title_-_39DAS5',
 					'hello.txt'
 	);
 	file_exists_ok($hello_txt, 'Talk directory and resource moved');
@@ -470,13 +547,13 @@ subtest 'move existing sessions on changes' => sub {
 	file_exists_ok($target_dir->subdir(
 		'Auditorium_B',
 			'2022-08-19_Freitag',
-				'2022-08-19_Freitag_1100_-_The_new_talk_title_-_39DAS5-42001',
+				'2022-08-19_Freitag_1100_-_The_new_talk_title_-_39DAS5',
 					'hello.txt'
 	), 'Talk directory and resource moved');
 	dir_exists_ok($target_dir->subdir(
 		'Auditorium_A',
 			'2022-08-19_Freitag',
-				'2022-08-19_Freitag_1130_-_The_new_title_of_the_other_talk_-_JFDS30-42002'
+				'2022-08-19_Freitag_1130_-_The_new_title_of_the_other_talk_-_JFDS30'
 	), 'Talk directory moved');
 	is_deeply($status, {
 		failed_resources_count  => 0,
