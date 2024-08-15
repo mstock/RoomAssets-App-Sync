@@ -127,11 +127,19 @@ has 'nextcloud_password' => (
 );
 
 
-has 'nextcloud_folder_url' => (
+has 'nextcloud_url' => (
 	is            => 'ro',
 	isa           => 'Str',
-	documentation => 'URL of the folder in Nextcloud that sould be synced.'
-		. ' Something like https://files.osmfoundation.org/remote.php/webdav/Room-Assets.',
+	documentation => 'URL of Nextcloud instance that sould be synced.'
+		. ' Something like `https://files.osmfoundation.org/`',
+);
+
+
+has 'nextcloud_path' => (
+	is            => 'ro',
+	isa           => 'Str',
+	documentation => 'Path inside the Nextcloud instance that should be synced.'
+		. ' Something like `Room-Assets`.',
 );
 
 
@@ -171,7 +179,7 @@ sub perform_sync ($self) {
 		croak 'Target dirctory ' . $self->target_dir() . ' does not exist';
 	}
 
-	if (defined $self->nextcloud_folder_url()) {
+	if (defined $self->nextcloud_url()) {
 		$self->sync_nextcloud();
 	}
 
@@ -188,7 +196,7 @@ sub perform_sync ($self) {
 		print JSON->new()->utf8()->pretty->canonical()->encode($aggregated_statuses);
 	}
 
-	if (defined $self->nextcloud_folder_url()) {
+	if (defined $self->nextcloud_url()) {
 		$self->sync_nextcloud();
 	}
 
@@ -353,7 +361,7 @@ sub update_or_create_resources ($self, $target_dir, $submission) {
 				$uri;
 			};
 		my $filename = decode('UTF-8', ($asset_uri->path_segments())[-1]);
-		if ($filename eq '') {
+		if (!defined $filename || $filename eq '') {
 			$log->errorf('Failed to extract usable file name from asset URL %s',
 				$asset_uri);
 			$status->{failed_resources_count}++;
@@ -426,7 +434,7 @@ sub fetch_resource ($self, $url) {
 sub find_existing_sessions ($self) {
 	my $sessions;
 	if (-d $self->target_dir()) {
-		for my $room (sort $self->target_dir()->children()) {
+		for my $room (sort grep { $_->is_dir() } $self->target_dir()->children()) {
 			for my $day (sort $room->children()) {
 				SESSION: for my $session (sort $day->children()) {
 					my ($code) = $session->basename() =~ m{([A-Z0-9]{6,6})$};
@@ -449,7 +457,7 @@ sub find_existing_sessions ($self) {
 
 
 sub cleanup ($self) {
-	for my $room ($self->target_dir()->children()) {
+	for my $room (grep { $_->is_dir() } $self->target_dir()->children()) {
 		for my $day ($room->children()) {
 			$self->remove_if_empty($day);
 		}
@@ -470,8 +478,9 @@ sub sync_nextcloud ($self) {
 		'--user', $self->nextcloud_user(),
 		'--password', $self->nextcloud_password(),
 		($self->nextcloud_silent() ? ('--silent') : ()),
+		($self->nextcloud_path() ? ('--path', $self->nextcloud_path()) : ()),
 		$self->target_dir(),
-		$self->nextcloud_folder_url(),
+		$self->nextcloud_url(),
 	);
 	systemx(@cmd);
 }
