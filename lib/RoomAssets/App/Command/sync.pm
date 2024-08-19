@@ -361,7 +361,10 @@ sub update_or_create_resources ($self, $target_dir, $submission) {
 				$uri;
 			};
 		my $filename = decode('UTF-8', ($asset_uri->path_segments())[-1]);
-		if (!defined $filename || $filename eq '') {
+		# Skip files without suffix, these tend to be not directly usable on some
+		# operating systems and often are the result of links to external resources
+		# like GitHub projects.
+		if (!defined $filename || $filename eq '' || $filename !~ m{\.[^.]+$}) {
 			$log->errorf('Failed to extract usable file name from asset URL %s',
 				$asset_uri);
 			$status->{failed_resources_count}++;

@@ -25,6 +25,9 @@
         },
         {
           "resource": "https://slides.example.com/unusable-file-name/"
+        },
+        {
+          "resource": "https://example.com/foo"
         }
       ]
     }

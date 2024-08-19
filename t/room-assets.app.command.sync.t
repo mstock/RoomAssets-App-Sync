@@ -313,7 +313,7 @@ subtest 'sync_event with non-English language' => sub {
 				'2022-08-19_Freitag_1030_-_Der_Titel_des_anderen_Vortrages_-_JFDS31'
 	), 'Talk directory created');
 	is_deeply($status, {
-		failed_resources_count  => 2,
+		failed_resources_count  => 3,
 		moved_talks_count       => 0,
 		new_resources_count     => 2,
 		new_talks_count         => 2,
@@ -417,7 +417,7 @@ subtest 'sync_event with all defined rooms' => sub {
 				'2022-08-19_Friday_1030_-_Der_Titel_des_anderen_Vortrages_-_JFDS31'
 	), 'Talk directory created');
 	is_deeply($status, {
-		failed_resources_count  => 2,
+		failed_resources_count  => 3,
 		moved_talks_count       => 0,
 		new_resources_count     => 2,
 		new_talks_count         => 2,
