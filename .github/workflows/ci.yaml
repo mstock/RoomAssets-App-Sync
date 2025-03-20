@@ -19,5 +19,10 @@ jobs:
           sudo apt update
           sudo apt install -y libdatetime-format-iso8601-perl libipc-system-simple-perl libjson-perl liblog-any-perl libmoose-perl libmoosex-app-cmd-perl libmoosex-getopt-perl libmoosex-types-path-class-perl liburi-perl libwww-perl
 
+      - name: 'Install test dependencies'
+        run: |
+          sudo apt update
+          sudo apt install -y libtest-file-perl libtest-exception-perl libtest-mockobject-perl
+
       - name: 'Run tests'
         run: 'prove -l'
