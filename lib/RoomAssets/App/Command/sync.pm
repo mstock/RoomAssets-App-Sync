@@ -437,7 +437,7 @@ sub fetch_resource ($self, $url) {
 sub find_existing_sessions ($self) {
 	my $sessions;
 	if (-d $self->target_dir()) {
-		for my $room (sort grep { $_->is_dir() } $self->target_dir()->children()) {
+		for my $room (sort $self->room_directories()) {
 			for my $day (sort $room->children()) {
 				SESSION: for my $session (sort $day->children()) {
 					my ($code) = $session->basename() =~ m{([A-Z0-9]{6,6})$};
@@ -460,12 +460,19 @@ sub find_existing_sessions ($self) {
 
 
 sub cleanup ($self) {
-	for my $room (grep { $_->is_dir() } $self->target_dir()->children()) {
+	for my $room ($self->room_directories()) {
 		for my $day ($room->children()) {
 			$self->remove_if_empty($day);
 		}
 		$self->remove_if_empty($room);
 	}
+}
+
+
+sub room_directories ($self) {
+	return grep {
+		$_->is_dir() && $_->basename() !~ /^\./
+	} $self->target_dir()->children();
 }
 
 
