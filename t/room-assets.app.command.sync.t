@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use utf8;
-use Test::More tests => 11;
+use Test::More tests => 12;
 use File::Temp;
 use Path::Class::Dir;
 use Test::File;
@@ -568,10 +568,16 @@ subtest 'move existing sessions on changes' => sub {
 
 
 subtest 'cleanup of empty rooms and days' => sub {
-	plan tests => 2;
+	plan tests => 5;
 
 	my $target_dir = $scratch->subdir('sync_event');
 	$target_dir->mkpath();
+	my $hidden_file = $target_dir->file('.hidden-file');
+	$hidden_file->touch();
+	my $hidden_dir = $target_dir->subdir('.hidden-dir');
+	$hidden_dir->mkpath();
+	my $hidden_dir_child = $hidden_dir->file('child');
+	$hidden_dir_child->touch();
 	my $doomed_room = $target_dir->subdir('Doomed_Room');
 	$doomed_room->mkpath();
 	my $doomed_day = $doomed_room->subdir('Doomed_Day');
@@ -587,4 +593,45 @@ subtest 'cleanup of empty rooms and days' => sub {
 	$command->cleanup();
 	file_not_exists_ok($doomed_room, 'Empty room removed');
 	file_not_exists_ok($doomed_day, 'Empty day removed');
+	file_exists_ok($hidden_file, 'Hidden file kept');
+	dir_exists_ok($hidden_dir, 'Hidden dir kept');
+	file_exists_ok($hidden_dir_child, 'Hidden dir child file kept');
+};
+
+
+subtest 'existing sessions detection' => sub {
+	plan tests => 1;
+
+	my $target_dir = $scratch->subdir('find_existing_sessions');
+	$target_dir->mkpath();
+	my $hidden_file = $target_dir->file('.hidden-file');
+	$hidden_file->touch();
+	my $hidden_dir = $target_dir->subdir('.hidden-dir');
+	$hidden_dir->mkpath();
+	my $hidden_dir_child = $hidden_dir->file('child');
+	$hidden_dir_child->touch();
+	my $room = $target_dir->subdir('Room');
+	$room->mkpath();
+	my $day = $room->subdir('Day');
+	$day->mkpath();
+	my $session_code = 'JFDS30';
+	my $session_dir = $day->subdir('1130_-_The_talk_-_' . $session_code);
+	$session_dir->mkpath();
+	my $command = RoomAssets::App::Command::sync->new({
+		app         => $app_mock,
+		log_level   => $log_level,
+		events      => ['our-conference'],
+		target_dir  => $target_dir,
+		pretalx_url => 'file:t/testdata',
+	});
+
+	my $sessions = $command->find_existing_sessions();
+	is_deeply($sessions, {
+		$session_code => {
+			code        => $session_code,
+			directories => [
+				$session_dir,
+			],
+		},
+	}, 'expected sessions found');
 };
