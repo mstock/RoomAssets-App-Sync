@@ -1,0 +1,23 @@
+---
+name: CI
+
+on:
+  push:
+    branches: [ 'main' ]
+  pull_request:
+    branches: [ 'main' ]
+
+jobs:
+  test:
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'Check out code'
+        uses: 'actions/checkout@v4'
+
+      - name: 'Install dependencies'
+        run: |
+          sudo apt update
+          sudo apt install -y libdatetime-format-iso8601-perl libipc-system-simple-perl libjson-perl liblog-any-perl libmoose-perl libmoosex-app-cmd-perl libmoosex-getopt-perl libmoosex-types-path-class-perl liburi-perl libwww-perl
+
+      - name: 'Run tests'
+        run: 'prove -l'
