@@ -374,6 +374,7 @@ sub update_or_create_resources ($self, $target_dir, $submission) {
 		my $target_file = $target_dir->file($filename);
 		my $is_new = -f $target_file ? 0 : 1;
 
+		$log->debugf('Mirroring %s...', $asset_uri);
 		my $result = $self->_ua()->mirror($asset_uri, $target_file);
 		unless ($result->is_success() || $result->code() eq 304) {
 			$log->errorf('Failed to download asset %s from submission "%s" '
@@ -426,6 +427,7 @@ sub fetch_schedule ($self, $event) {
 
 
 sub fetch_resource ($self, $url) {
+	$log->debugf('Retrieving %s...', $url);
 	my $result = $self->_ua()->get($url);
 	unless ($result->is_success()) {
 		croak 'Failed to retrieve submissions: ' . $result->status_line();
