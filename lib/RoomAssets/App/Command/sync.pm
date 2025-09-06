@@ -222,7 +222,7 @@ sub sync_event ($self, $event) {
 	my $submissions = {
 		map {
 			($_->{code} => $_)
-		} @{ $self->fetch_submissions($event)->{results} }
+		} $self->fetch_submissions($event)
 	};
 	my $schedule = $self->fetch_schedule($event);
 	my $existing_sessions = $self->find_existing_sessions();
@@ -418,9 +418,15 @@ sub fetch_submissions ($self, $event) {
 	$uri->path_segments($uri->path_segments(), 'api', 'events', $event, 'submissions');
 	$uri->query_form({
 		expand => 'resources',
-		limit => 10000,
 	});
-	return $self->fetch_resource($uri);
+	my @submissions;
+	while (defined $uri) {
+		my $result = $self->fetch_resource($uri);
+		$uri = $result->{next};
+		push @submissions, @{ $result->{results} // [] };
+	}
+
+	return @submissions;
 }
 
 
