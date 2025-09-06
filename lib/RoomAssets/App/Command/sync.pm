@@ -417,6 +417,7 @@ sub fetch_submissions ($self, $event) {
 	my $uri = URI->new($self->pretalx_url);
 	$uri->path_segments($uri->path_segments(), 'api', 'events', $event, 'submissions');
 	$uri->query_form({
+		expand => 'resources',
 		limit => 10000,
 	});
 	return $self->fetch_resource($uri);
