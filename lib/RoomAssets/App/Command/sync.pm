@@ -26,6 +26,10 @@ use IPC::System::Simple qw(systemx);
 use Data::Dumper;
 use File::Spec::Unix;
 use Log::Any qw($log);
+use Scalar::Util qw(looks_like_number);
+
+
+my $MAX_RETRY_AFTER = 3600;
 
 
 has 'pretalx_url' => (
@@ -429,10 +433,28 @@ sub fetch_schedule ($self, $event) {
 sub fetch_resource ($self, $url) {
 	$log->debugf('Retrieving %s...', $url);
 	my $result = $self->_ua()->get($url);
-	unless ($result->is_success()) {
+	if ($result->is_success()) {
+		return decode_json($result->content());
+	}
+	elsif ($result->code() eq '429') {
+		my $retry_after = $result->header('Retry-After');
+		if (
+			defined $retry_after && looks_like_number($retry_after)
+				&& $retry_after >= 0 && $retry_after <= $MAX_RETRY_AFTER
+		) {
+			# `+ 1` to be on the safe(r) side in case the API returns 0
+			sleep $retry_after + 1;
+		}
+		else {
+			croak 'Got ' . $result->status_line()
+				. ', but no usable/acceptable "Retry-After" header value: '
+				. ($retry_after // '<undef>')
+		}
+		return $self->fetch_resource($url);
+	}
+	else {
 		croak 'Failed to retrieve submissions: ' . $result->status_line();
 	}
-	return decode_json($result->content());
 }
 
 
