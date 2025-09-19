@@ -18,6 +18,7 @@ use feature qw(signatures);
 use LWP::UserAgent;
 use JSON;
 use URI;
+use DateTime;
 use DateTime::Format::ISO8601;
 use List::Util qw(any);
 use Encode;
@@ -108,6 +109,17 @@ has 'target_dir' => (
 );
 
 
+has 'state_file' => (
+	is            => 'ro',
+	isa           => 'Path::Class::File',
+	default       => sub ($self) {
+		return $self->target_dir()->file('.room-assets-sync-state');
+	},
+	lazy          => 1,
+	documentation => 'File with state information from last successful sync.'
+);
+
+
 has 'print_statistics' => (
 	is            => 'ro',
 	isa           => 'Bool',
@@ -179,6 +191,7 @@ sub execute ($self, $opt, $args) {
 
 
 sub perform_sync ($self) {
+	my $sync_start = DateTime->now();
 	unless (-d $self->target_dir()) {
 		croak 'Target dirctory ' . $self->target_dir() . ' does not exist';
 	}
@@ -214,6 +227,11 @@ sub perform_sync ($self) {
 	for my $change_indicator (@change_indicators) {
 		$status ||= $aggregated_statuses->{$change_indicator} > 0;
 	}
+	$self->write_state_file({
+		%{ $aggregated_statuses },
+		sync_start => DateTime::Format::ISO8601->format_datetime($sync_start),
+		sync_end   => DateTime::Format::ISO8601->format_datetime(DateTime->now()),
+	});
 	return $status;
 }
 
@@ -538,6 +556,17 @@ sub aggregate_statuses ($self, $aggregate, $new) {
 	}
 
 	return $aggregated_statuses;
+}
+
+
+sub write_state_file ($self, $state) {
+	my $tmp_file = File::Temp->new(DIR => $self->target_dir());
+	print { $tmp_file } JSON->new()->utf8()->pretty->canonical()->encode($state)
+		or die 'Failed to write temporary state file: ' . $!;
+	$tmp_file->close() or die 'Failed to close temporary state file: ' . $!;
+	rename $tmp_file->filename(), $self->state_file()
+		or die 'Failed to rename state file to final name: ' . $!;
+	return;
 }
 
 

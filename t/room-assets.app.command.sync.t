@@ -5,6 +5,7 @@ use utf8;
 use Test::More tests => 12;
 use File::Temp;
 use Path::Class::Dir;
+use JSON;
 use Test::File;
 use Test::Exception;
 use Encode;
@@ -429,7 +430,7 @@ subtest 'sync_event with all defined rooms' => sub {
 
 
 subtest 'run with multiple events' => sub {
-	plan tests => 9;
+	plan tests => 13;
 
 	my $target_dir = $scratch->subdir('sync_event');
 	$target_dir->mkpath();
@@ -475,6 +476,21 @@ subtest 'run with multiple events' => sub {
 			'2022-08-19_Friday',
 				'2022-08-19_Friday_1030_-_Der_Titel_des_anderen_Vortrages_-_JFDS31'
 	), 'Talk directory created');
+
+	file_exists_ok($command->state_file(), 'State file written');
+	my $state_data = decode_json(scalar $command->state_file()->slurp());
+	my $sync_start = delete $state_data->{sync_start};
+	my $sync_end = delete $state_data->{sync_end};
+	my $timestamp_regex = qr{^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$};
+	like($sync_start, $timestamp_regex, 'sync start timestamp ok');
+	like($sync_end, $timestamp_regex, 'sync end timestamp ok');
+	is_deeply($state_data, {
+		failed_resources_count  => 3,
+		moved_talks_count       => 0,
+		new_resources_count     => 3,
+		new_talks_count         => 4,
+		updated_resources_count => 0,
+	}, 'state file contains expected data');
 
 	$target_dir->rmtree();
 };
