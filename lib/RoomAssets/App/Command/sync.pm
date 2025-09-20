@@ -560,7 +560,10 @@ sub aggregate_statuses ($self, $aggregate, $new) {
 
 
 sub write_state_file ($self, $state) {
-	my $tmp_file = File::Temp->new(DIR => $self->target_dir());
+	my $tmp_file = File::Temp->new(
+		DIR   => $self->target_dir(),
+		PERMS => 0666,
+	);
 	print { $tmp_file } JSON->new()->utf8()->pretty->canonical()->encode($state)
 		or die 'Failed to write temporary state file: ' . $!;
 	$tmp_file->close() or die 'Failed to close temporary state file: ' . $!;
