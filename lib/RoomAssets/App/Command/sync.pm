@@ -112,6 +112,7 @@ has 'target_dir' => (
 has 'state_file' => (
 	is            => 'ro',
 	isa           => 'Path::Class::File',
+	coerce        => 1,
 	default       => sub ($self) {
 		return $self->target_dir()->file('.room-assets-sync-state');
 	},
