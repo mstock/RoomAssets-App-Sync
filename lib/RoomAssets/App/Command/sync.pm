@@ -167,6 +167,14 @@ has 'nextcloud_silent' => (
 );
 
 
+has 'name_length' => (
+	is            => 'ro',
+	isa           => 'Int',
+	default       => 42,
+	documentation => 'Maximum length for talk name part of directory name.',
+);
+
+
 has '_ua' => (
 	is      => 'ro',
 	isa     => 'LWP::UserAgent',
@@ -287,11 +295,16 @@ sub sync_talk ($self, $room, $submissions, $talk, $existing_sessions) {
 		$start->set_locale($self->locale());
 	}
 	my $identifier = $self->sanitize_file_name($talk->{code});
+	my $talk_name_part = $self->sanitize_file_name(
+		$self->name_length()
+			? substr $talk->{title}, 0, $self->name_length()
+			: $talk->{title}
+	);
 	my $assets_target = $self->target_dir()
 		->subdir($self->sanitize_file_name($room))
 		->subdir(encode('UTF-8', $start->strftime($self->day_strftime_pattern())))
 		->subdir(encode('UTF-8', $start->strftime($self->session_strftime_pattern()))
-			. '_-_' . $self->sanitize_file_name($talk->{title})
+			. '_-_' . $talk_name_part
 			. '_-_' . encode('UTF-8', $identifier)
 		);
 	if (! -d $assets_target) {
@@ -418,7 +431,7 @@ sub sanitize_file_name ($self, $name) {
 	# Get rid of characters the nextcloudcmd client considers invalid and that
 	# might cause issues on Windows, too, or which are generally not so 'nice'
 	# in file names
-	$name =~ s{(?:/|\s|:|,|\?|\*|'|"|\||<|>|\(|\)|\\|!|&)+}{_}g;
+	$name =~ s{(?:/|\s|:|,|\?|\*|'|"|’|”|\||<|>|\(|\)|\\|!|&)+}{_}g;
 	# Further cleanup to get slightly nicer names after the above replacements
 	$name =~ s{^-+(?=.)}{};   # Remove leading -, avoid empty result
 	$name =~ s{^-$}{_};       # Replace - with _ if that's the full name
